@@ -1,8 +1,4 @@
-"""Command-line entry point for ingesting a Bridges proceedings year.
-
-Usage:
-    uv run python -m bridges_rag.ingest.cli --year 2025 --limit 5
-"""
+"""Command-line entry point for ingesting a Bridges proceedings year."""
 
 from __future__ import annotations
 

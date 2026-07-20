@@ -29,13 +29,6 @@ def ingest_year(
     limit: int | None = None,
     delay: float = 1.0,
 ) -> list[Paper]:
-    """Scrape the listing for `year`, fetch each paper's detail page and
-    BibTeX citation, download its PDF, and write a JSONL manifest to
-    `data_dir/<year>/manifest.jsonl`.
-
-    `limit` caps how many entries are processed, for trying the pipeline out
-    without pulling down an entire year's corpus.
-    """
     base_url = archive_url(year)
 
     with Scraper(delay=delay) as scraper:

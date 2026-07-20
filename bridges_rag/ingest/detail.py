@@ -1,11 +1,4 @@
-"""Parse a Bridges archive paper detail page.
-
-Detail pages carry Google Scholar-style `citation_*` meta tags plus an
-abstract div. These are more reliable than the listing page's free-text
-byline, so callers should prefer the values here (`merge_detail`) over the
-listing-derived stub wherever a detail page exists. Editor/publisher/address
-aren't in these meta tags — those come from `bridges_rag.ingest.bibtex`.
-"""
+"""Parse a Bridges archive paper detail page."""
 
 from __future__ import annotations
 
@@ -83,11 +76,6 @@ def _meta_content(soup: BeautifulSoup, name: str) -> str | None:
 
 
 def merge_detail(paper: Paper, detail: DetailMetadata) -> Paper:
-    """Return a copy of `paper` with detail-page fields filled in.
-
-    Title/authors/pdf_url from the detail page win when present, since the
-    listing page's free-text byline is a lossier source.
-    """
     return paper.model_copy(
         update={
             "title": detail.title or paper.title,

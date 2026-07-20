@@ -10,15 +10,7 @@ FRONT_MATTER_CATEGORY = "Front Matter"
 
 
 class Paper(BaseModel):
-    """Metadata for a single paper in a Bridges proceedings year.
-
-    Populated in three passes: `parse_listing` fills the fields available on
-    the year's listing page, then (for entries with a `detail_url`)
-    `parse_detail` fills in the abstract/isbn/issn/dates from the paper's own
-    page, and `parse_bibtex` fills in editors/publisher/address from its
-    BibTeX citation file — the only source for those three. `pdf_sha256` and
-    `pdf_path` are filled in last, once the PDF has been downloaded.
-    """
+    """Metadata for paper."""
 
     paper_id: str
     year: int

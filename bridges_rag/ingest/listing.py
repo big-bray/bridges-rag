@@ -1,10 +1,4 @@
-"""Parse a Bridges archive year-listing page into `Paper` stubs.
-
-Each entry on the listing page gives us title, authors, category and page
-range, plus a link to either the paper's detail page (most entries) or
-directly to a PDF (front/back matter). Abstract, ISBN and ISSN aren't on the
-listing page — those come from `bridges_rag.ingest.detail`.
-"""
+"""Parse a Bridges archive year-listing page into `Paper` stubs."""
 
 from __future__ import annotations
 
@@ -20,7 +14,6 @@ _PAGE_RANGE_RE = re.compile(r"Pages\s+(\d+)(?:\s*[-–—]\s*(\d+))?")
 
 
 def parse_listing(html: str, year: int, base_url: str) -> list[Paper]:
-    """Parse a year-listing page's HTML into a list of `Paper` stubs, in order."""
     soup = BeautifulSoup(html, "html.parser")
     main = soup.find("main")
     if main is None:
@@ -74,7 +67,6 @@ def _parse_entry(anchor: Tag, *, category: str, year: int, base_url: str) -> Pap
 
 
 def _split_authors(text: str) -> list[str]:
-    """Split a byline like "A, B, and C" or "A and B" into individual names."""
     parts = [p.strip() for p in text.split(",")]
     parts = [p for p in parts if p]
     if not parts:

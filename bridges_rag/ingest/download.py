@@ -1,4 +1,4 @@
-"""Idempotent, rate-limited PDF downloads."""
+"""PDF downloads."""
 
 from __future__ import annotations
 
@@ -10,11 +10,6 @@ from bridges_rag.ingest.models import Paper
 
 
 def download_pdf(paper: Paper, data_dir: Path, scraper: Scraper) -> Paper:
-    """Download `paper`'s PDF into `data_dir/<year>/`, skipping it if already present.
-
-    Returns a copy of `paper` with `pdf_path` (relative to `data_dir`) and
-    `pdf_sha256` filled in.
-    """
     year_dir = data_dir / str(paper.year)
     year_dir.mkdir(parents=True, exist_ok=True)
     dest = year_dir / f"{paper.paper_id}.pdf"

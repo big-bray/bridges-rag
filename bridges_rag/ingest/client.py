@@ -1,4 +1,4 @@
-"""A polite, rate-limited HTTP client for scraping the Bridges archive."""
+"""HTTP client for scraping the Bridges archive."""
 
 from __future__ import annotations
 
@@ -11,9 +11,6 @@ USER_AGENT = "bridges-rag research scraper"
 
 
 class Scraper:
-    """Thin httpx.Client wrapper that enforces a minimum delay after each
-    response before the next request fires."""
-
     def __init__(self, delay: float = 1.0, timeout: float = 30.0) -> None:
         self._delay = delay
         self._last_request: float | None = None

@@ -1,11 +1,4 @@
-"""Parse a Bridges paper's BibTeX citation file.
-
-Editor, publisher and address aren't exposed anywhere else on the site (not
-in the listing page or the detail page's `citation_*` meta tags), so this is
-the only source for them. Values are LaTeX-escaped (e.g. `Ba\\c{s}e\\u{g}mez`
-for "Başeğmez"); `_unescape_latex` undoes the common accent macros so editor
-names come out as plain Unicode, matching the style of `Paper.authors`.
-"""
+"""Parse a Bridges paper's BibTeX citation file."""
 
 from __future__ import annotations
 
@@ -16,9 +9,6 @@ from bridges_rag.ingest.models import Paper
 
 _FIELD_START_RE = re.compile(r"(\w+)\s*=\s*\{")
 
-# LaTeX accent commands that take one argument, mapped to the Unicode
-# combining mark applied to the argument's first letter (then NFC-normalized
-# into a single precomposed character, e.g. "s" + combining cedilla -> "ş").
 _ACCENT_COMBINING = {
     "'": "́",  # acute
     "`": "̀",  # grave
@@ -37,7 +27,6 @@ _ACCENT_COMBINING = {
 }
 _ACCENT_RE = re.compile(r"\\([\"'`^~=.]|[a-zA-Z]+)\{([^{}]*)\}")
 
-# LaTeX macros for single letters/ligatures with no argument.
 _LETTER_MACROS = {
     "o": "ø",
     "O": "Ø",
@@ -86,7 +75,6 @@ def parse_bibtex(text: str) -> BibtexMetadata:
 
 
 def _parse_fields(text: str) -> dict[str, str]:
-    """Extract `key = {value}` pairs, respecting nested braces in `value`."""
     fields: dict[str, str] = {}
     for match in _FIELD_START_RE.finditer(text):
         key = match.group(1)
@@ -104,7 +92,6 @@ def _parse_fields(text: str) -> dict[str, str]:
 
 
 def _bibtex_name_to_plain(name: str) -> str:
-    """Turn a BibTeX "Last, First" name into plain "First Last"."""
     name = _unescape_latex(name).strip()
     if "," not in name:
         return name
@@ -127,8 +114,6 @@ def _replace_accent(match: re.Match[str]) -> str:
 
 
 def merge_bibtex(paper: Paper, bibtex_text: str, bibtex: BibtexMetadata) -> Paper:
-    """Return a copy of `paper` with the raw BibTeX text and its parsed
-    editors/publisher/address filled in."""
     return paper.model_copy(
         update={
             "bibtex": bibtex_text,
