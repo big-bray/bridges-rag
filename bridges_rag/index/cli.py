@@ -22,6 +22,12 @@ def main() -> None:
     parser.add_argument("--collection", default=DEFAULT_COLLECTION)
     parser.add_argument("--qdrant-url", default=DEFAULT_URL)
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="torch device to embed on (e.g. 'mps', 'cuda', 'cpu'); "
+        "defaults to sentence-transformers' auto-detection",
+    )
     parser.add_argument("--batch-size", type=int, default=64)
     args = parser.parse_args()
 
@@ -31,6 +37,7 @@ def main() -> None:
         collection=args.collection,
         qdrant_url=args.qdrant_url,
         model_name=args.model_name,
+        device=args.device,
         batch_size=args.batch_size,
     )
     print(f"Indexed {total} chunks for {args.year} into collection '{args.collection}'")

@@ -31,13 +31,14 @@ def index_year(
     collection: str = DEFAULT_COLLECTION,
     qdrant_url: str = DEFAULT_URL,
     model_name: str = DEFAULT_MODEL_NAME,
+    device: str | None = None,
     batch_size: int = 64,
 ) -> int:
     chunks = _load_chunks(year, data_dir)
     if not chunks:
         return 0
 
-    embedder = Embedder(model_name)
+    embedder = Embedder(model_name, device=device)
     client = get_client(qdrant_url)
     ensure_collection(client, collection, vector_size=embedder.dimension)
 
