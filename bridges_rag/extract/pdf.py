@@ -1,4 +1,4 @@
-"""Extract per-page markdown text from a PDF with PyMuPDF4LLM."""
+"""Extract per-page markdown text from a PDF."""
 
 from __future__ import annotations
 
@@ -10,12 +10,6 @@ from bridges_rag.extract.models import PageMarkdown
 
 
 def extract_pages(pdf_path: Path, *, first_page: int | None = None) -> list[PageMarkdown]:
-    """Extract markdown text per page from `pdf_path`.
-
-    `first_page` is the paper's published first page number in the
-    proceedings (from the ingest manifest); when given, it's used to derive
-    each page's `proceedings_page`.
-    """
     chunks = pymupdf4llm.to_markdown(str(pdf_path), page_chunks=True)
 
     pages = []

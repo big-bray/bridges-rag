@@ -12,14 +12,13 @@ class PageMarkdown(BaseModel):
     """1-indexed page number within the downloaded PDF."""
 
     proceedings_page: int | None = None
-    """Published page number in the proceedings, derived from the paper's
-    `first_page` (from the ingest manifest) when known."""
+    """Published page number in the proceedings."""
 
     markdown: str
 
 
 class ExtractedPaper(BaseModel):
-    """Result of extracting markdown from one paper's PDF."""
+    """Extractied markdown from a paper PDF."""
 
     paper_id: str
     pages: list[PageMarkdown]

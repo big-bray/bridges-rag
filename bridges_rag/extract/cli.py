@@ -1,8 +1,4 @@
-"""Command-line entry point for extracting markdown from downloaded PDFs.
-
-Usage:
-    uv run python -m bridges_rag.extract.cli --year 2025 --limit 5
-"""
+"""Command-line entry point for extracting markdown from downloaded PDFs."""
 
 from __future__ import annotations
 
