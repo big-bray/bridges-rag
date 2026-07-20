@@ -17,7 +17,8 @@ USER_AGENT = f"bridges-rag research scraper (contact: {CONTACT})"
 
 
 class Scraper:
-    """Thin httpx.Client wrapper that enforces a minimum delay between requests."""
+    """Thin httpx.Client wrapper that enforces a minimum delay after each
+    response before the next request fires."""
 
     def __init__(self, delay: float = 1.0, timeout: float = 30.0) -> None:
         self._delay = delay
@@ -32,6 +33,7 @@ class Scraper:
         self._throttle()
         response = self._client.get(url)
         response.raise_for_status()
+        self._last_request = time.monotonic()
         return response
 
     def _throttle(self) -> None:
@@ -40,7 +42,6 @@ class Scraper:
             remaining = self._delay - elapsed
             if remaining > 0:
                 time.sleep(remaining)
-        self._last_request = time.monotonic()
 
     def close(self) -> None:
         self._client.close()
