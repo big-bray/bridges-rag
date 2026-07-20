@@ -3,10 +3,13 @@
 Detail pages carry Google Scholar-style `citation_*` meta tags plus an
 abstract div. These are more reliable than the listing page's free-text
 byline, so callers should prefer the values here (`merge_detail`) over the
-listing-derived stub wherever a detail page exists.
+listing-derived stub wherever a detail page exists. Editor/publisher/address
+aren't in these meta tags — those come from `bridges_rag.ingest.bibtex`.
 """
 
 from __future__ import annotations
+
+from datetime import date, datetime
 
 from bs4 import BeautifulSoup
 
@@ -24,6 +27,8 @@ class DetailMetadata:
         abstract: str | None,
         isbn: str | None,
         issn: str | None,
+        publication_date: date | None,
+        conference_title: str | None,
         pdf_url: str | None,
     ) -> None:
         self.title = title
@@ -31,6 +36,8 @@ class DetailMetadata:
         self.abstract = abstract
         self.isbn = isbn
         self.issn = issn
+        self.publication_date = publication_date
+        self.conference_title = conference_title
         self.pdf_url = pdf_url
 
 
@@ -52,8 +59,19 @@ def parse_detail(html: str) -> DetailMetadata:
         abstract=abstract,
         isbn=_meta_content(soup, "citation_isbn"),
         issn=_meta_content(soup, "citation_issn"),
+        publication_date=_parse_citation_date(_meta_content(soup, "citation_publication_date")),
+        conference_title=_meta_content(soup, "citation_conference_title"),
         pdf_url=_meta_content(soup, "citation_pdf_url"),
     )
+
+
+def _parse_citation_date(value: str | None) -> date | None:
+    if value is None:
+        return None
+    try:
+        return datetime.strptime(value, "%Y/%m/%d").date()
+    except ValueError:
+        return None
 
 
 def _meta_content(soup: BeautifulSoup, name: str) -> str | None:
@@ -77,6 +95,8 @@ def merge_detail(paper: Paper, detail: DetailMetadata) -> Paper:
             "abstract": detail.abstract,
             "isbn": detail.isbn,
             "issn": detail.issn,
+            "publication_date": detail.publication_date,
+            "conference_title": detail.conference_title,
             "pdf_url": detail.pdf_url or paper.pdf_url,
         }
     )

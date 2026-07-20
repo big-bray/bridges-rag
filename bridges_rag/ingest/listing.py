@@ -57,6 +57,7 @@ def _parse_entry(anchor: Tag, *, category: str, year: int, base_url: str) -> Pap
     is_direct_pdf = href.endswith(".pdf")
     paper_id = href.rsplit("/", 1)[-1].removesuffix(".pdf").removesuffix(".html")
     pdf_href = href if is_direct_pdf else f"{href.removesuffix('.html')}.pdf"
+    bibtex_href = None if is_direct_pdf else f"{href.removesuffix('.html')}-bibtex.txt"
 
     return Paper(
         paper_id=paper_id,
@@ -68,6 +69,7 @@ def _parse_entry(anchor: Tag, *, category: str, year: int, base_url: str) -> Pap
         last_page=last_page,
         detail_url=None if is_direct_pdf else urljoin(base_url, href),
         pdf_url=urljoin(base_url, pdf_href),
+        bibtex_url=None if bibtex_href is None else urljoin(base_url, bibtex_href),
     )
 
 

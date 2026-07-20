@@ -7,6 +7,7 @@ from pathlib import Path
 
 import httpx
 
+from bridges_rag.ingest.bibtex import merge_bibtex, parse_bibtex
 from bridges_rag.ingest.client import Scraper
 from bridges_rag.ingest.detail import merge_detail, parse_detail
 from bridges_rag.ingest.download import download_pdf
@@ -28,8 +29,9 @@ def ingest_year(
     limit: int | None = None,
     delay: float = 1.0,
 ) -> list[Paper]:
-    """Scrape the listing for `year`, fetch each paper's detail page, download
-    its PDF, and write a JSONL manifest to `data_dir/<year>/manifest.jsonl`.
+    """Scrape the listing for `year`, fetch each paper's detail page and
+    BibTeX citation, download its PDF, and write a JSONL manifest to
+    `data_dir/<year>/manifest.jsonl`.
 
     `limit` caps how many entries are processed, for trying the pipeline out
     without pulling down an entire year's corpus.
@@ -51,6 +53,13 @@ def ingest_year(
                     paper = merge_detail(paper, parse_detail(detail_html))
                 except httpx.HTTPError:
                     logger.exception("failed to fetch detail page for %s", paper.paper_id)
+
+            if paper.bibtex_url is not None:
+                try:
+                    bibtex_text = scraper.get(paper.bibtex_url).text
+                    paper = merge_bibtex(paper, bibtex_text, parse_bibtex(bibtex_text))
+                except httpx.HTTPError:
+                    logger.exception("failed to fetch bibtex for %s", paper.paper_id)
 
             try:
                 paper = download_pdf(paper, data_dir, scraper)

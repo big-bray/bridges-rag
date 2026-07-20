@@ -29,6 +29,7 @@ def test_front_matter_has_no_detail_page_and_direct_pdf_url():
     assert front_matter.category == FRONT_MATTER_CATEGORY
     assert front_matter.detail_url is None
     assert front_matter.pdf_url == BASE_URL + "frontmatter.pdf"
+    assert front_matter.bibtex_url is None
     assert front_matter.authors == ["The Editors"]
     assert front_matter.first_page is None
     assert front_matter.last_page is None
@@ -47,6 +48,7 @@ def test_detail_and_pdf_urls_derived_from_html_href():
     paper = papers[1]
     assert paper.detail_url == BASE_URL + "bridges2025-1.html"
     assert paper.pdf_url == BASE_URL + "bridges2025-1.pdf"
+    assert paper.bibtex_url == BASE_URL + "bridges2025-1-bibtex.txt"
 
 
 def test_single_page_paper_page_range():
