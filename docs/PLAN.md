@@ -85,12 +85,12 @@ Four weekends, one milestone each. Each milestone ends with something demonstrab
 **Done when:** one command downloads the 2025 corpus and produces clean per-paper markdown + metadata.
 
 * [x] Scaffold repo: uv project, `bridges_rag/` package, ruff config, pytest, CI workflow.
-* [ ] Scrape the 2025 archive listing; parse paper entries into Pydantic metadata models.
-* [ ] Download PDFs with rate limiting; skip already-downloaded files (idempotent).
-* [ ] Write the JSONL manifest (metadata + URLs + checksums); gitignore `data/`.
-* [ ] Extract markdown per paper with PyMuPDF4LLM, preserving page numbers.
-* [ ] Verify math-heavy papers don't crash extraction; log parse failures instead of dying.
-* [ ] Tests: metadata parsing from fixture HTML, manifest round-trip.
+* [x] Scrape the 2025 archive listing; parse paper entries into Pydantic metadata models.
+* [x] Download PDFs with rate limiting; skip already-downloaded files (idempotent).
+* [x] Write the JSONL manifest (metadata + URLs + checksums); gitignore `data/`.
+* [x] Extract markdown per paper with PyMuPDF4LLM, preserving page numbers.
+* [x] Verify math-heavy papers don't crash extraction; log parse failures instead of dying.
+* [x] Tests: metadata parsing from fixture HTML, manifest round-trip.
 
 ## Milestone 2 — Chunking, Embedding & Indexing
 

@@ -16,8 +16,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy>=2.3.0",
     "pytest>=8.2",
     "ruff>=0.5",
+    "types-beautifulsoup4>=4.12.0.20250516",
 ]
 
 [build-system]
@@ -45,3 +47,25 @@ select = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["pymupdf4llm.*", "pymupdf.*", "qdrant_client.*", "sentence_transformers.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "test_listing",
+    "test_detail",
+    "test_manifest",
+    "test_bibtex",
+    "test_extract_pdf",
+    "test_extract_pipeline",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false

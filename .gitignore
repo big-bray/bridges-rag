@@ -11,6 +11,7 @@ dist/
 # Tooling
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 
 # OS
 .DS_Store
