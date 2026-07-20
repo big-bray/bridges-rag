@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-import os
 import time
 from types import TracebackType
 
 import httpx
 
-# Default contact is the project's GitHub noreply address, so nothing personal
-# ends up in source or in archive.bridgesmathart.org's request logs. Override
-# with BRIDGES_RAG_CONTACT if you're running this scraper yourself.
-_DEFAULT_CONTACT = "105504062+big-bray@users.noreply.github.com"
-CONTACT = os.environ.get("BRIDGES_RAG_CONTACT", _DEFAULT_CONTACT)
-USER_AGENT = f"bridges-rag research scraper (contact: {CONTACT})"
+USER_AGENT = "bridges-rag research scraper"
 
 
 class Scraper:
