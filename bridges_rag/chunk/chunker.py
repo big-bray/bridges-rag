@@ -131,6 +131,15 @@ def chunk_paper(
     target_tokens: int = DEFAULT_TARGET_TOKENS,
     overlap_tokens: int = DEFAULT_OVERLAP_TOKENS,
 ) -> list[Chunk]:
+    if overlap_tokens >= target_tokens:
+        # Otherwise the carried-over overlap alone can already meet or exceed the target,
+        # so packing re-exceeds it on every subsequent paragraph, emitting oversized,
+        # heavily duplicated groups instead of the intended sliding window.
+        raise ValueError(
+            f"overlap_tokens ({overlap_tokens}) must be smaller than "
+            f"target_tokens ({target_tokens})"
+        )
+
     chunks: list[Chunk] = []
     for section in _sections(_paragraphs(pages)):
         for group in _pack_section(section, target_tokens, overlap_tokens):

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from bridges_rag.chunk.chunker import chunk_paper, chunk_year, estimate_tokens
 from bridges_rag.extract.models import PageMarkdown
 from bridges_rag.extract.pipeline import render_markdown
@@ -86,6 +88,16 @@ def test_chunk_paper_splits_long_section_with_overlap():
         assert estimate_tokens(chunk.text) <= 20 + estimate_tokens(paragraphs[0])
     # the tail of one chunk reappears at the head of the next (the overlap window)
     assert chunks[0].text.splitlines()[-1] in chunks[1].text
+
+
+def test_chunk_paper_rejects_overlap_greater_than_or_equal_to_target():
+    pages = [PageMarkdown(pdf_page=1, proceedings_page=1, markdown="Some text.")]
+
+    with pytest.raises(ValueError, match="overlap_tokens"):
+        chunk_paper(_paper(), pages, target_tokens=20, overlap_tokens=20)
+
+    with pytest.raises(ValueError, match="overlap_tokens"):
+        chunk_paper(_paper(), pages, target_tokens=20, overlap_tokens=30)
 
 
 def test_chunk_paper_hard_splits_a_single_unbreakable_paragraph():
