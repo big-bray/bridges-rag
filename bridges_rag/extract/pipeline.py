@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 
 from bridges_rag.extract.models import ExtractedPaper
@@ -14,13 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> ExtractedPaper:
-    """Extract one paper's downloaded PDF to a markdown file in `markdown_dir`.
-
-    Never raises: PyMuPDF can throw a variety of internal errors on
-    malformed or unusual PDFs, so failures are caught, logged, and recorded
-    on the returned `ExtractedPaper.error` instead of dying, keeping one bad
-    paper from stopping the rest of the batch.
-    """
     if paper.pdf_path is None:
         return ExtractedPaper(paper_id=paper.paper_id, pages=[], error="no downloaded PDF")
 
@@ -38,12 +32,6 @@ def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> Extracted
 
 
 def render_markdown(extracted: ExtractedPaper) -> str:
-    """Join a paper's pages into one markdown document.
-
-    Each page is preceded by an HTML comment marker recording its PDF and
-    proceedings page numbers, so a later chunking step can attribute page
-    numbers to chunks without re-running extraction.
-    """
     blocks = []
     for page in extracted.pages:
         marker = f"<!-- pdf_page={page.pdf_page} proceedings_page={page.proceedings_page} -->"
@@ -52,11 +40,19 @@ def render_markdown(extracted: ExtractedPaper) -> str:
 
 
 def extract_year(year: int, data_dir: Path, *, limit: int | None = None) -> list[ExtractedPaper]:
-    """Extract markdown for every downloaded paper in `year`'s manifest."""
     manifest_path = data_dir / str(year) / "manifest.jsonl"
     papers = read_manifest(manifest_path)
     if limit is not None:
         papers = papers[:limit]
 
     markdown_dir = data_dir / str(year) / "markdown"
-    return [extract_paper(paper, data_dir, markdown_dir) for paper in papers]
+    total = len(papers)
+    results = []
+    for i, paper in enumerate(papers, start=1):
+        start = time.monotonic()
+        extracted = extract_paper(paper, data_dir, markdown_dir)
+        elapsed = time.monotonic() - start
+        status = "ok" if extracted.ok else f"error: {extracted.error}"
+        print(f"[{i}/{total}] {paper.paper_id} ({elapsed:.1f}s) {status}", flush=True)
+        results.append(extracted)
+    return results
