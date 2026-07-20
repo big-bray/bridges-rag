@@ -3,7 +3,7 @@ from pathlib import Path
 import pymupdf
 
 from bridges_rag.extract.models import ExtractedPaper, PageMarkdown
-from bridges_rag.extract.pipeline import extract_paper, extract_year, render_markdown
+from bridges_rag.extract.pipeline import extract_paper, extract_year, parse_pages, render_markdown
 from bridges_rag.ingest.manifest import write_manifest
 from bridges_rag.ingest.models import Paper
 
@@ -92,6 +92,22 @@ def test_render_markdown_joins_pages_with_markers():
     assert rendered.index("pdf_page=1") < rendered.index("Page one text.")
     assert rendered.index("Page one text.") < rendered.index("pdf_page=2")
     assert rendered.index("pdf_page=2") < rendered.index("Page two text.")
+
+
+def test_parse_pages_round_trips_render_markdown():
+    extracted = ExtractedPaper(
+        paper_id="bridges2025-1",
+        pages=[
+            PageMarkdown(pdf_page=1, proceedings_page=29, markdown="Page one text."),
+            PageMarkdown(
+                pdf_page=2, proceedings_page=None, markdown="Page two text.\n\nMore text."
+            ),
+        ],
+    )
+
+    pages = parse_pages(render_markdown(extracted))
+
+    assert pages == extracted.pages
 
 
 def test_extract_year_continues_past_one_bad_paper_and_writes_good_ones(tmp_path: Path):

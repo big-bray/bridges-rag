@@ -8,6 +8,7 @@ See [PLAN.md](PLAN.md) for scope and milestones.
 
 ```sh
 uv sync
+docker compose up -d   # starts Qdrant; dashboard at http://localhost:6333/dashboard
 ```
 
 ## Development
