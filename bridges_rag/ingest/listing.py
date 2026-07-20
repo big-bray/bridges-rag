@@ -16,7 +16,7 @@ _PAGE_RANGE_RE = re.compile(r"Pages\s+(\d+)(?:\s*[-–—]\s*(\d+))?")
 def parse_listing(html: str, year: int, base_url: str) -> list[Paper]:
     soup = BeautifulSoup(html, "html.parser")
     main = soup.find("main")
-    if main is None:
+    if not isinstance(main, Tag):
         raise ValueError("listing page has no <main> content area")
 
     papers: list[Paper] = []

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from bridges_rag.ingest.models import Paper
 
@@ -69,7 +69,7 @@ def _parse_citation_date(value: str | None) -> date | None:
 
 def _meta_content(soup: BeautifulSoup, name: str) -> str | None:
     tag = soup.find("meta", attrs={"name": name})
-    if tag is None:
+    if not isinstance(tag, Tag):
         return None
     content = tag.get("content")
     return content.strip() if isinstance(content, str) else None
