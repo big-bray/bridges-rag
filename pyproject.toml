@@ -70,6 +70,8 @@ module = [
     "test_embedder",
     "test_citation",
     "test_search",
+    "test_eval_metrics",
+    "test_eval_benchmark",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
