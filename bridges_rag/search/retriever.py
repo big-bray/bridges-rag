@@ -1,4 +1,9 @@
-"""Retriever protocol: the interface the eval harness benchmarks against."""
+"""Retriever protocol: the interface the eval harness benchmarks against.
+
+Dense vector search is the reference implementation. Hybrid search, reranking,
+and the Stream C graph retriever all become benchmarkable by implementing
+this same protocol, with no changes to eval/runner.py.
+"""
 
 from __future__ import annotations
 

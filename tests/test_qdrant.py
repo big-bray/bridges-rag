@@ -1,5 +1,5 @@
 from bridges_rag.chunk.models import Chunk
-from bridges_rag.index.qdrant import chunk_payload, chunk_point_id
+from bridges_rag.index.qdrant import chunk_payload, chunk_point_id, collection_for
 
 
 def _chunk() -> Chunk:
@@ -30,3 +30,13 @@ def test_chunk_payload_includes_chunk_fields_and_embedding_model():
     assert payload["authors"] == ["Ada Lovelace"]
     assert payload["year"] == 2025
     assert payload["embedding_model"] == "BAAI/bge-base-en-v1.5"
+
+
+def test_collection_for_slugifies_the_model_name():
+    assert collection_for("BAAI/bge-large-en-v1.5") == "bridges_papers__bge-large-en-v1.5"
+
+
+def test_collection_for_lowercases_and_has_no_slash():
+    slug = collection_for("Some/Weird-Casing")
+    assert slug == "bridges_papers__weird-casing"
+    assert "/" not in slug
