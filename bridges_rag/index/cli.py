@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 
 from bridges_rag.embed.embedder import DEFAULT_MODEL_NAME
+from bridges_rag.embed.sparse import DEFAULT_SPARSE_MODEL_NAME
 from bridges_rag.index.pipeline import index_year
 from bridges_rag.index.qdrant import DEFAULT_COLLECTION, DEFAULT_URL
 
@@ -29,6 +30,12 @@ def main() -> None:
         "defaults to sentence-transformers' auto-detection",
     )
     parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument(
+        "--hybrid",
+        action="store_true",
+        help="also index BM25 sparse vectors, enabling hybrid search on this collection",
+    )
+    parser.add_argument("--sparse-model-name", default=DEFAULT_SPARSE_MODEL_NAME)
     args = parser.parse_args()
 
     total = index_year(
@@ -39,6 +46,8 @@ def main() -> None:
         model_name=args.model_name,
         device=args.device,
         batch_size=args.batch_size,
+        hybrid=args.hybrid,
+        sparse_model_name=args.sparse_model_name,
     )
     print(f"Indexed {total} chunks for {args.year} into collection '{args.collection}'")
 
