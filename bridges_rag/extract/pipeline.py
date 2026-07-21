@@ -18,6 +18,12 @@ _PAGE_MARKER_RE = re.compile(r"<!-- pdf_page=(\d+) proceedings_page=(None|\d+) -
 
 
 def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> ExtractedPaper:
+    md_path = markdown_dir / f"{paper.paper_id}.md"
+    if md_path.exists():
+        return ExtractedPaper(
+            paper_id=paper.paper_id, pages=parse_pages(md_path.read_text(encoding="utf-8"))
+        )
+
     if paper.pdf_path is None:
         return ExtractedPaper(paper_id=paper.paper_id, pages=[], error="no downloaded PDF")
 

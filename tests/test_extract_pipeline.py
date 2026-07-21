@@ -94,6 +94,25 @@ def test_extract_paper_handles_missing_pdf_path(tmp_path: Path):
     assert extracted.pages == []
 
 
+def test_extract_paper_skips_reextraction_when_markdown_already_exists(tmp_path: Path):
+    data_dir = tmp_path
+    markdown_dir = data_dir / "2025" / "markdown"
+    markdown_dir.mkdir(parents=True)
+    existing = ExtractedPaper(
+        paper_id="bridges2025-4",
+        pages=[PageMarkdown(pdf_page=1, proceedings_page=5, markdown="Already extracted.")],
+    )
+    (markdown_dir / "bridges2025-4.md").write_text(render_markdown(existing), encoding="utf-8")
+
+    # No PDF on disk and no pdf_path in the manifest — if this weren't skipped it would error.
+    paper = _paper("bridges2025-4", pdf_path=None)
+
+    extracted = extract_paper(paper, data_dir, markdown_dir)
+
+    assert extracted.ok
+    assert extracted.pages == existing.pages
+
+
 def test_extract_paper_from_bytes_writes_markdown_file_without_persisting_pdf(tmp_path: Path):
     data_dir = tmp_path
     data = _make_pdf_bytes(["Some paper content."])
