@@ -28,19 +28,19 @@ Every stage writes JSON/JSONL that the next stage reads, so any stage can be rer
 ## Setup
 
 ```sh
-uv sync
-docker compose up -d   # starts Qdrant; dashboard at http://localhost:6333/dashboard
+make setup   # uv sync + start Qdrant (docker compose) + wait for it to be ready
 ```
 
 ## Build the index
 
-Run once per proceedings year (defaults to `--year 2025`):
+Runs ingest → extract → index → eval for one proceedings year (defaults to `YEAR=2025`):
 
 ```sh
-uv run python -m bridges_rag.ingest.cli   # scrape listing, download PDFs, write the manifest
-uv run python -m bridges_rag.extract.cli  # extract per-paper markdown
-uv run python -m bridges_rag.index.cli    # chunk (on demand), embed, and upsert into Qdrant
+make build
 ```
+
+Or run a stage at a time: `make ingest`, `make extract`, `make index`, `make eval`. Override
+`YEAR` or `DATA_DIR` as needed, e.g. `make build YEAR=2025 DATA_DIR=data`.
 
 ## Usage
 
@@ -55,7 +55,7 @@ Enter a query, optionally filter by author or year, and get back ranked passages
 25 hand-written questions with paper-level gold labels (`eval/benchmark.jsonl`) measure retrieval quality at the paper level. Recall@k is the fraction of gold papers found in the top-k unique papers; MRR is the reciprocal rank of the first gold paper.
 
 ```sh
-uv run python -m bridges_rag.eval.cli
+make eval
 ```
 
 Results for the MVP config (`bge-base-en-v1.5`, cosine similarity, n=25):
@@ -78,7 +78,6 @@ The MVP ships one retrieval technique (dense embeddings only) so it can serve as
 ## Development
 
 ```sh
-uv run ruff check .
-uv run mypy .
-uv run pytest
+make lint
+make test
 ```
