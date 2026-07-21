@@ -65,6 +65,9 @@ module = [
     "test_bibtex",
     "test_extract_pdf",
     "test_extract_pipeline",
+    "test_chunker",
+    "test_qdrant",
+    "test_embedder",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
