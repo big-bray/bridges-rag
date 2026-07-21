@@ -51,6 +51,7 @@ def test_evaluate_aggregates_recall_and_mrr_over_questions():
     assert results.recall_at_k[1] == 0.5  # q1 hits at rank 1, q2 doesn't
     assert results.recall_at_k[5] == 1.0
     assert results.mrr == (1.0 + 0.5) / 2
+    assert results.avg_query_ms >= 0.0
 
 
 def test_evaluate_deduplicates_repeated_papers_across_chunks():
