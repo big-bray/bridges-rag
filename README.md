@@ -67,6 +67,14 @@ Results for the MVP config (`bge-base-en-v1.5`, cosine similarity, n=25):
 | Recall@10 | 0.89 |
 | MRR | 0.907 |
 
+## Future Work
+
+The MVP ships one retrieval technique (dense embeddings only) so it can serve as a baseline. Deferred experiments will be benchmarked against it using the same Recall@k/MRR eval:
+
+- **Embedding model comparison** — swap `bge-base-en-v1.5` for alternatives; payloads already record the embedding model name to support side-by-side indexes.
+- **Improved retrieval** — hybrid search (BM25 + embeddings), reranking, and query expansion, to see how far each pushes Recall@k/MRR past the dense-only baseline.
+- **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
+
 ## Development
 
 ```sh
