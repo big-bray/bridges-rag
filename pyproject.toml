@@ -62,6 +62,7 @@ module = [
     "test_listing",
     "test_detail",
     "test_manifest",
+    "test_download",
     "test_bibtex",
     "test_extract_pdf",
     "test_extract_pipeline",

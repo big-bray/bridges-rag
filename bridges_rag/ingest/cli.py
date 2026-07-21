@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 from pathlib import Path
 
 from bridges_rag.ingest.pipeline import ingest_year
@@ -30,12 +31,33 @@ def main() -> None:
         default=1.0,
         help="minimum seconds between HTTP requests",
     )
+    parser.add_argument(
+        "--persist-pdf",
+        dest="persist_pdf",
+        action="store_true",
+        help="download PDFs to disk before extracting, for offline re-extraction "
+        "(same as setting PERSIST_PDF=1)",
+    )
+    parser.add_argument(
+        "--no-persist-pdf",
+        dest="persist_pdf",
+        action="store_false",
+        help="extract markdown straight from downloaded PDF bytes without writing "
+        "the PDF to disk (default)",
+    )
+    parser.set_defaults(persist_pdf=os.environ.get("PERSIST_PDF") == "1")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING)
 
-    papers = ingest_year(args.year, args.data_dir, limit=args.limit, delay=args.delay)
+    papers = ingest_year(
+        args.year,
+        args.data_dir,
+        limit=args.limit,
+        delay=args.delay,
+        persist_pdf=args.persist_pdf,
+    )
     print(f"Ingested {len(papers)} papers for {args.year} into {args.data_dir / str(args.year)}")
 
 
