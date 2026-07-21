@@ -22,6 +22,7 @@ def download_pdf(paper: Paper, data_dir: Path, scraper: Scraper) -> Paper:
         update={
             "pdf_path": str(dest.relative_to(data_dir)),
             "pdf_sha256": _sha256(dest),
+            "pdf_persisted": True,
         }
     )
 

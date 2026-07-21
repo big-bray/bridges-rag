@@ -20,6 +20,7 @@ def _paper(paper_id: str) -> Paper:
         issn="1099-6702",
         pdf_sha256="deadbeef",
         pdf_path=f"2025/{paper_id}.pdf",
+        pdf_persisted=True,
     )
 
 

@@ -33,6 +33,9 @@ class Paper(BaseModel):
     address: str | None = None
     pdf_sha256: str | None = None
     pdf_path: str | None = None
+    pdf_persisted: bool = False
+    """Whether the PDF itself was written to disk (`pdf_path`) or only streamed through
+    memory to extract markdown, per the `--persist-pdf`/`--no-persist-pdf` ingest flag."""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
