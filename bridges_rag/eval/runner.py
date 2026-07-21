@@ -14,7 +14,7 @@ from bridges_rag.index.qdrant import DEFAULT_COLLECTION
 from bridges_rag.search.search import search
 
 RECALL_KS = (1, 5, 10)
-# Chunks fetched per query, deduplicated to papers, before scoring recall/MRR.
+# Chunks fetched per query; deduplicated to papers before metrics are calculated
 POOL_SIZE = 50
 
 

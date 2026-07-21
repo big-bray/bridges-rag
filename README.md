@@ -2,8 +2,6 @@
 
 Local semantic search over the [Bridges Mathematical Art Archive](https://archive.bridgesmathart.org/): ingests proceedings papers, builds a vector index, and returns relevant passages with citations.
 
-See [PLAN.md](docs/PLAN.md) for scope and milestones.
-
 ## Architecture
 
 ```text
@@ -25,7 +23,7 @@ Bridges archive (HTML + PDFs)
    search  ──▶ Streamlit UI (app.py)       (query → embed → Qdrant search → cited passages)
 ```
 
-Every stage writes JSON/JSONL that the next stage reads, so any stage can be rerun independently (`data/` is gitignored — PDFs are copyrighted, everything else is reproducible from the manifest).
+Every stage writes JSON/JSONL that the next stage reads, so any stage can be rerun independently.
 
 ## Setup
 
@@ -40,7 +38,7 @@ Run once per proceedings year (defaults to `--year 2025`):
 
 ```sh
 uv run python -m bridges_rag.ingest.cli   # scrape listing, download PDFs, write the manifest
-uv run python -m bridges_rag.extract.cli  # extract per-paper markdown with PyMuPDF4LLM
+uv run python -m bridges_rag.extract.cli  # extract per-paper markdown
 uv run python -m bridges_rag.index.cli    # chunk (on demand), embed, and upsert into Qdrant
 ```
 
@@ -50,11 +48,11 @@ uv run python -m bridges_rag.index.cli    # chunk (on demand), embed, and upsert
 uv run streamlit run app.py
 ```
 
-Enter a query, optionally filter by author or year, and get back ranked passages with paper/page citations. The retrieval code (`bridges_rag/search/`) is imported directly by the Streamlit page — there's no API layer.
+Enter a query, optionally filter by author or year, and get back ranked passages with paper/page citations.
 
 ## Evaluation
 
-25 hand-written questions with paper-level gold labels (`eval/benchmark.jsonl`) measure retrieval quality at the paper level: chunk results are deduplicated to their source paper before scoring. Recall@k is the fraction of gold papers found in the top-k unique papers; MRR is the reciprocal rank of the first gold paper.
+25 hand-written questions with paper-level gold labels (`eval/benchmark.jsonl`) measure retrieval quality at the paper level. Recall@k is the fraction of gold papers found in the top-k unique papers; MRR is the reciprocal rank of the first gold paper.
 
 ```sh
 uv run python -m bridges_rag.eval.cli
