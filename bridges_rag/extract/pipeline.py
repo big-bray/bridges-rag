@@ -38,7 +38,6 @@ def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> Extracted
 
 
 def extract_paper_from_bytes(paper: Paper, data: bytes, markdown_dir: Path) -> ExtractedPaper:
-    """Same as `extract_paper`, but from in-memory PDF bytes that are never written to disk."""
     try:
         pages = extract_pages_from_stream(data, first_page=paper.first_page)
     except Exception as exc:

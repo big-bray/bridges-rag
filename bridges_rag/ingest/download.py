@@ -38,11 +38,7 @@ def harvest_pdf(
     *,
     previous: Paper | None = None,
 ) -> Paper:
-    """Extract markdown straight from downloaded PDF bytes, never writing the PDF to disk.
-
-    Skips the network fetch entirely if the paper's markdown was already extracted, carrying
-    forward `previous`'s `pdf_sha256` (from an earlier manifest) so re-runs stay reproducible.
-    """
+    """Extract markdown straight from downloaded PDF bytes, never writing the PDF to disk."""
     markdown_dir = data_dir / str(paper.year) / "markdown"
     md_path = markdown_dir / f"{paper.paper_id}.md"
 
