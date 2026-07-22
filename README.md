@@ -76,7 +76,7 @@ Results for the MVP config (`bge-base-en-v1.5`, cosine similarity, n=25):
 make sweep
 ```
 
-Results for n=25, cosine similarity (`nomic-embed-text-v1.5` excluded — its custom modeling code requires `einops`, which isn't a project dependency):
+Results for n=25, cosine similarity:
 
 | Model | Dim | Recall@1 | Recall@5 | Recall@10 | MRR | Embed (s) | Query (ms) | Weights (MB) | Vectors (MB) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -85,8 +85,9 @@ Results for n=25, cosine similarity (`nomic-embed-text-v1.5` excluded — its cu
 | thenlper/gte-large | 1024 | 0.58 | 0.89 | 0.93 | 0.980 | 186.2 | 50 | 640 | 8.5 |
 | intfloat/e5-base-v2 | 768 | 0.57 | 0.83 | 0.89 | 0.913 | 63.9 | 39 | 419 | 6.4 |
 | sentence-transformers/all-MiniLM-L6-v2 | 384 | 0.55 | 0.81 | 0.91 | 0.933 | 9.2 | 66 | 87 | 3.2 |
+| nomic-ai/nomic-embed-text-v1.5 | 768 | 0.62 | 0.82 | 0.90 | 1.000 | 342.5 | 60 | 523 | 6.4 |
 
-`gte-large` leads on every metric but Recall@1, at half the on-disk size of `bge-large` (fp16 weights). `all-MiniLM-L6-v2` trails slightly on quality but embeds 6-20x faster at a fraction of the size — a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
+`nomic-embed-text-v1.5` tops both Recall@1 and MRR (a perfect 1.000 — the first result is always a gold paper), but it's the slowest to embed by a wide margin (1.7-37x the others), likely due to its 8192-token context window and lack of a fast ONNX/PyTorch path in this setup. `gte-large` is the best all-around performer once embed cost is weighed in — strong across every metric at half the on-disk size of `bge-large` (fp16 weights). `all-MiniLM-L6-v2` trails slightly on quality but embeds 6-20x faster at a fraction of the size — a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
 
 ## Future Work
 
