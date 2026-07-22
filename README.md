@@ -73,7 +73,7 @@ Results for the MVP config (`bge-base-en-v1.5`, cosine similarity, n=25):
 `sweep_cli` re-embeds and re-indexes the corpus with each candidate model and reports the same Recall@k/MRR metrics alongside embedding cost (time, model size on disk, vector storage):
 
 ```sh
-uv run python -m bridges_rag.eval.sweep_cli
+make sweep
 ```
 
 Results for n=25, cosine similarity (`nomic-embed-text-v1.5` excluded — its custom modeling code requires `einops`, which isn't a project dependency):
