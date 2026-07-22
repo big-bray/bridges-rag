@@ -87,7 +87,7 @@ Results for n=25, cosine similarity:
 | sentence-transformers/all-MiniLM-L6-v2 | 384 | 0.55 | 0.81 | 0.91 | 0.933 | 9.2 | 66 | 87 | 3.2 |
 | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.62 | 0.82 | 0.90 | 1.000 | 342.5 | 60 | 523 | 6.4 |
 
-`nomic-embed-text-v1.5` tops both Recall@1 and MRR (a perfect 1.000 — the first result is always a gold paper), but it's the slowest to embed by a wide margin (1.7-37x the others), likely due to its 8192-token context window and lack of a fast ONNX/PyTorch path in this setup. `gte-large` is the best all-around performer once embed cost is weighed in — strong across every metric at half the on-disk size of `bge-large` (fp16 weights). `all-MiniLM-L6-v2` trails slightly on quality but embeds 6-20x faster at a fraction of the size — a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
+`nomic-embed-text-v1.5` tops both Recall@1 and MRR but it's the slowest to embed, likely due to its 8192-token context window and lack of a fast ONNX/PyTorch path in this setup. `gte-large` is the best all-around performer when considering embed cost. `all-MiniLM-L6-v2` trails slightly on quality but embeds significantly faster at a fraction of the size, which is a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
 
 ## Future Work
 
