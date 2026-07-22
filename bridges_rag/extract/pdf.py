@@ -35,6 +35,5 @@ def extract_pages(pdf_path: Path, *, first_page: int | None = None) -> list[Page
 
 
 def extract_pages_from_stream(data: bytes, *, first_page: int | None = None) -> list[PageMarkdown]:
-    """Same as `extract_pages`, but from an in-memory PDF that is never written to disk."""
     with pymupdf.open(stream=data, filetype="pdf") as doc:  # type: ignore[no-untyped-call]
         return _extract_pages_from_doc(doc, first_page=first_page)

@@ -9,6 +9,7 @@ from bridges_rag.embed.embedder import DEFAULT_MODEL_NAME, Embedder
 from bridges_rag.eval.benchmark import load_benchmark
 from bridges_rag.eval.runner import evaluate, format_results_table
 from bridges_rag.index.qdrant import DEFAULT_COLLECTION, DEFAULT_URL, get_client
+from bridges_rag.search.retriever import DenseRetriever
 
 
 def main() -> None:
@@ -22,8 +23,9 @@ def main() -> None:
     questions = load_benchmark(args.benchmark)
     client = get_client(args.qdrant_url)
     embedder = Embedder(args.model_name)
+    retriever = DenseRetriever(client, embedder, collection=args.collection)
 
-    results = evaluate(client, embedder, questions, collection=args.collection)
+    results = evaluate(retriever, questions)
 
     print(f"n = {results.n_questions} questions, model = {args.model_name}\n")
     print(format_results_table(results))
