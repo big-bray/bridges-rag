@@ -68,11 +68,30 @@ Results for the MVP config (`bge-base-en-v1.5`, cosine similarity, n=25):
 | Recall@10 | 0.89 |
 | MRR | 0.907 |
 
+### Embedding model sweep
+
+`sweep_cli` re-embeds and re-indexes the corpus with each candidate model and reports the same Recall@k/MRR metrics alongside embedding cost (time, model size on disk, vector storage):
+
+```sh
+uv run python -m bridges_rag.eval.sweep_cli
+```
+
+Results for n=25, cosine similarity (`nomic-embed-text-v1.5` excluded — its custom modeling code requires `einops`, which isn't a project dependency):
+
+| Model | Dim | Recall@1 | Recall@5 | Recall@10 | MRR | Embed (s) | Query (ms) | Weights (MB) | Vectors (MB) |
+|---|---|---|---|---|---|---|---|---|---|
+| BAAI/bge-base-en-v1.5 (MVP) | 768 | 0.54 | 0.80 | 0.89 | 0.907 | 62.4 | 40 | 419 | 6.4 |
+| BAAI/bge-large-en-v1.5 | 1024 | 0.55 | 0.88 | 0.93 | 0.923 | 202.3 | 55 | 1280 | 8.5 |
+| thenlper/gte-large | 1024 | 0.58 | 0.89 | 0.93 | 0.980 | 186.2 | 50 | 640 | 8.5 |
+| intfloat/e5-base-v2 | 768 | 0.57 | 0.83 | 0.89 | 0.913 | 63.9 | 39 | 419 | 6.4 |
+| sentence-transformers/all-MiniLM-L6-v2 | 384 | 0.55 | 0.81 | 0.91 | 0.933 | 9.2 | 66 | 87 | 3.2 |
+
+`gte-large` leads on every metric but Recall@1, at half the on-disk size of `bge-large` (fp16 weights). `all-MiniLM-L6-v2` trails slightly on quality but embeds 6-20x faster at a fraction of the size — a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
+
 ## Future Work
 
 The MVP ships one retrieval technique (dense embeddings only) so it can serve as a baseline. Deferred experiments will be benchmarked against it using the same Recall@k/MRR eval:
 
-- **Embedding model comparison** — swap `bge-base-en-v1.5` for alternatives; payloads already record the embedding model name to support side-by-side indexes.
 - **Improved retrieval** — hybrid search (BM25 + embeddings), reranking, and query expansion, to see how far each pushes Recall@k/MRR past the dense-only baseline.
 - **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
 
