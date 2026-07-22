@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from huggingface_hub import scan_cache_dir
+from huggingface_hub.errors import CacheNotFound
 from qdrant_client import QdrantClient
 
 from bridges_rag.chunk.models import Chunk
@@ -43,7 +44,11 @@ class SweepRow:
 
 def model_disk_usage_bytes(model_name: str) -> int | None:
     """Bytes on disk for `model_name` in the local Hugging Face cache."""
-    for repo in scan_cache_dir().repos:
+    try:
+        cache = scan_cache_dir()
+    except CacheNotFound:
+        return None
+    for repo in cache.repos:
         if repo.repo_id == model_name:
             return repo.size_on_disk
     return None
