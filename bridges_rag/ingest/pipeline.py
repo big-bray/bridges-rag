@@ -10,9 +10,9 @@ import httpx
 from bridges_rag.ingest.bibtex import merge_bibtex, parse_bibtex
 from bridges_rag.ingest.client import Scraper
 from bridges_rag.ingest.detail import merge_detail, parse_detail
-from bridges_rag.ingest.download import download_pdf
+from bridges_rag.ingest.download import download_pdf, harvest_pdf
 from bridges_rag.ingest.listing import parse_listing
-from bridges_rag.ingest.manifest import write_manifest
+from bridges_rag.ingest.manifest import read_manifest, write_manifest
 from bridges_rag.ingest.models import Paper
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,13 @@ def ingest_year(
     *,
     limit: int | None = None,
     delay: float = 1.0,
+    persist_pdf: bool = False,
 ) -> list[Paper]:
     base_url = archive_url(year)
+    manifest_path = data_dir / str(year) / "manifest.jsonl"
+    previous = (
+        {p.paper_id: p for p in read_manifest(manifest_path)} if manifest_path.exists() else {}
+    )
 
     with Scraper(delay=delay) as scraper:
         listing_html = scraper.get(base_url).text
@@ -55,12 +60,16 @@ def ingest_year(
                     logger.exception("failed to fetch bibtex for %s", paper.paper_id)
 
             try:
-                paper = download_pdf(paper, data_dir, scraper)
+                if persist_pdf:
+                    paper = download_pdf(paper, data_dir, scraper)
+                else:
+                    paper = harvest_pdf(
+                        paper, data_dir, scraper, previous=previous.get(paper.paper_id)
+                    )
             except httpx.HTTPError:
                 logger.exception("failed to download PDF for %s", paper.paper_id)
 
             papers.append(paper)
 
-    manifest_path = data_dir / str(year) / "manifest.jsonl"
     write_manifest(papers, manifest_path)
     return papers

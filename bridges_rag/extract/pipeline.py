@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from bridges_rag.extract.models import ExtractedPaper, PageMarkdown
-from bridges_rag.extract.pdf import extract_pages
+from bridges_rag.extract.pdf import extract_pages, extract_pages_from_stream
 from bridges_rag.ingest.manifest import read_manifest
 from bridges_rag.ingest.models import Paper
 
@@ -18,6 +18,12 @@ _PAGE_MARKER_RE = re.compile(r"<!-- pdf_page=(\d+) proceedings_page=(None|\d+) -
 
 
 def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> ExtractedPaper:
+    md_path = markdown_dir / f"{paper.paper_id}.md"
+    if md_path.exists():
+        return ExtractedPaper(
+            paper_id=paper.paper_id, pages=parse_pages(md_path.read_text(encoding="utf-8"))
+        )
+
     if paper.pdf_path is None:
         return ExtractedPaper(paper_id=paper.paper_id, pages=[], error="no downloaded PDF")
 
@@ -28,9 +34,26 @@ def extract_paper(paper: Paper, data_dir: Path, markdown_dir: Path) -> Extracted
         logger.exception("failed to extract markdown for %s", paper.paper_id)
         return ExtractedPaper(paper_id=paper.paper_id, pages=[], error=str(exc))
 
-    extracted = ExtractedPaper(paper_id=paper.paper_id, pages=pages)
+    return _write_extracted(paper.paper_id, pages, markdown_dir)
+
+
+def extract_paper_from_bytes(paper: Paper, data: bytes, markdown_dir: Path) -> ExtractedPaper:
+    """Same as `extract_paper`, but from in-memory PDF bytes that are never written to disk."""
+    try:
+        pages = extract_pages_from_stream(data, first_page=paper.first_page)
+    except Exception as exc:
+        logger.exception("failed to extract markdown for %s", paper.paper_id)
+        return ExtractedPaper(paper_id=paper.paper_id, pages=[], error=str(exc))
+
+    return _write_extracted(paper.paper_id, pages, markdown_dir)
+
+
+def _write_extracted(
+    paper_id: str, pages: list[PageMarkdown], markdown_dir: Path
+) -> ExtractedPaper:
+    extracted = ExtractedPaper(paper_id=paper_id, pages=pages)
     markdown_dir.mkdir(parents=True, exist_ok=True)
-    (markdown_dir / f"{paper.paper_id}.md").write_text(render_markdown(extracted), encoding="utf-8")
+    (markdown_dir / f"{paper_id}.md").write_text(render_markdown(extracted), encoding="utf-8")
     return extracted
 
 

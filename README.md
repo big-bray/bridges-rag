@@ -6,12 +6,10 @@ Local semantic search over the [Bridges Mathematical Art Archive](https://archiv
 
 ```text
 Bridges archive (HTML + PDFs)
-        │  httpx + BeautifulSoup
+        │  httpx + BeautifulSoup + PyMuPDF4LLM
         ▼
-   ingest  ──▶ data/<year>/manifest.jsonl + *.pdf
-        │  PyMuPDF4LLM
-        ▼
-  extract  ──▶ data/<year>/markdown/*.md   (per-page markdown, page numbers preserved)
+   ingest  ──▶ data/<year>/manifest.jsonl          (PDFs streamed to markdown in memory,
+        │      data/<year>/markdown/*.md            never written to disk, by default)
         │  heading-aware chunking
         ▼
     chunk  ──▶ data/<year>/chunks.jsonl    (token-budgeted, metadata denormalized on each chunk)
@@ -24,6 +22,9 @@ Bridges archive (HTML + PDFs)
 ```
 
 Every stage writes JSON/JSONL that the next stage reads, so any stage can be rerun independently.
+`ingest` extracts markdown straight from downloaded PDF bytes by default (`extract` then just
+confirms the markdown is already there); pass `--persist-pdf` (or set `PERSIST_PDF=1`) to write
+PDFs to disk instead, e.g. for offline re-extraction.
 
 ## Setup
 

@@ -3,7 +3,13 @@ from pathlib import Path
 import pymupdf
 
 from bridges_rag.extract.models import ExtractedPaper, PageMarkdown
-from bridges_rag.extract.pipeline import extract_paper, extract_year, parse_pages, render_markdown
+from bridges_rag.extract.pipeline import (
+    extract_paper,
+    extract_paper_from_bytes,
+    extract_year,
+    parse_pages,
+    render_markdown,
+)
 from bridges_rag.ingest.manifest import write_manifest
 from bridges_rag.ingest.models import Paper
 
@@ -15,6 +21,16 @@ def _make_pdf(path: Path, page_texts: list[str]) -> None:
         page.insert_text((72, 72), text)
     doc.save(path)
     doc.close()
+
+
+def _make_pdf_bytes(page_texts: list[str]) -> bytes:
+    doc = pymupdf.open()
+    for text in page_texts:
+        page = doc.new_page()
+        page.insert_text((72, 72), text)
+    data: bytes = doc.tobytes()
+    doc.close()
+    return data
 
 
 def _paper(paper_id: str, *, pdf_path: str | None, first_page: int = 1) -> Paper:
@@ -76,6 +92,59 @@ def test_extract_paper_handles_missing_pdf_path(tmp_path: Path):
 
     assert not extracted.ok
     assert extracted.pages == []
+
+
+def test_extract_paper_skips_reextraction_when_markdown_already_exists(tmp_path: Path):
+    data_dir = tmp_path
+    markdown_dir = data_dir / "2025" / "markdown"
+    markdown_dir.mkdir(parents=True)
+    existing = ExtractedPaper(
+        paper_id="bridges2025-4",
+        pages=[PageMarkdown(pdf_page=1, proceedings_page=5, markdown="Already extracted.")],
+    )
+    (markdown_dir / "bridges2025-4.md").write_text(render_markdown(existing), encoding="utf-8")
+
+    # No PDF on disk and no pdf_path in the manifest — if this weren't skipped it would error.
+    paper = _paper("bridges2025-4", pdf_path=None)
+
+    extracted = extract_paper(paper, data_dir, markdown_dir)
+
+    assert extracted.ok
+    assert extracted.pages == existing.pages
+
+
+def test_extract_paper_from_bytes_writes_markdown_file_without_persisting_pdf(tmp_path: Path):
+    data_dir = tmp_path
+    data = _make_pdf_bytes(["Some paper content."])
+
+    paper = _paper("bridges2025-1", pdf_path=None, first_page=29)
+    markdown_dir = data_dir / "2025" / "markdown"
+
+    extracted = extract_paper_from_bytes(paper, data, markdown_dir)
+
+    assert extracted.ok
+    assert extracted.error is None
+    md_file = markdown_dir / "bridges2025-1.md"
+    assert md_file.exists()
+    content = md_file.read_text(encoding="utf-8")
+    assert "Some paper content." in content
+    assert "pdf_page=1" in content
+    assert "proceedings_page=29" in content
+    assert not any(data_dir.rglob("*.pdf"))
+
+
+def test_extract_paper_from_bytes_records_error_instead_of_raising_on_corrupt_pdf(
+    tmp_path: Path,
+):
+    paper = _paper("bridges2025-2", pdf_path=None)
+    markdown_dir = tmp_path / "2025" / "markdown"
+
+    extracted = extract_paper_from_bytes(paper, b"not actually a pdf", markdown_dir)
+
+    assert not extracted.ok
+    assert extracted.error is not None
+    assert extracted.pages == []
+    assert not (markdown_dir / "bridges2025-2.md").exists()
 
 
 def test_render_markdown_joins_pages_with_markers():
