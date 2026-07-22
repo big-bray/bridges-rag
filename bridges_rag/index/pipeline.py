@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from qdrant_client import QdrantClient
+
 from bridges_rag.chunk.chunker import chunk_year
 from bridges_rag.chunk.models import Chunk
 from bridges_rag.chunk.store import read_chunks
@@ -17,11 +19,36 @@ from bridges_rag.index.qdrant import (
 )
 
 
-def _load_chunks(year: int, data_dir: Path) -> list[Chunk]:
+def load_chunks(year: int, data_dir: Path) -> list[Chunk]:
+    """Read a year's chunks.jsonl, chunking on demand if it doesn't exist yet."""
     chunks_path = data_dir / str(year) / "chunks.jsonl"
     if chunks_path.exists():
         return read_chunks(chunks_path)
     return chunk_year(year, data_dir)
+
+
+def index_chunks(
+    chunks: list[Chunk],
+    embedder: Embedder,
+    client: QdrantClient,
+    *,
+    collection: str = DEFAULT_COLLECTION,
+    batch_size: int = 64,
+) -> int:
+    """Embed and upsert `chunks` into `collection`, sized for `embedder`."""
+    if not chunks:
+        return 0
+
+    ensure_collection(client, collection, vector_size=embedder.dimension)
+
+    total = len(chunks)
+    for start in range(0, total, batch_size):
+        batch = chunks[start : start + batch_size]
+        vectors = embedder.embed_passages([c.text for c in batch]).tolist()
+        upsert_chunks(client, collection, batch, vectors, embedding_model=embedder.model_name)
+        print(f"[{min(start + batch_size, total)}/{total}] embedded & indexed", flush=True)
+
+    return total
 
 
 def index_year(
@@ -34,19 +61,7 @@ def index_year(
     device: str | None = None,
     batch_size: int = 64,
 ) -> int:
-    chunks = _load_chunks(year, data_dir)
-    if not chunks:
-        return 0
-
+    chunks = load_chunks(year, data_dir)
     embedder = Embedder(model_name, device=device)
     client = get_client(qdrant_url)
-    ensure_collection(client, collection, vector_size=embedder.dimension)
-
-    total = len(chunks)
-    for start in range(0, total, batch_size):
-        batch = chunks[start : start + batch_size]
-        vectors = embedder.embed_passages([c.text for c in batch]).tolist()
-        upsert_chunks(client, collection, batch, vectors, embedding_model=model_name)
-        print(f"[{min(start + batch_size, total)}/{total}] embedded & indexed", flush=True)
-
-    return total
+    return index_chunks(chunks, embedder, client, collection=collection, batch_size=batch_size)

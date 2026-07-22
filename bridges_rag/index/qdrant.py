@@ -22,6 +22,11 @@ def get_client(url: str = DEFAULT_URL) -> QdrantClient:
     return QdrantClient(url=url)
 
 
+def collection_for(model_name: str) -> str:
+    slug = model_name.rsplit("/", 1)[-1].lower()
+    return f"{DEFAULT_COLLECTION}__{slug}"
+
+
 def ensure_collection(client: QdrantClient, collection: str, *, vector_size: int) -> None:
     """Create the collection and its payload indexes if they don't already exist."""
     if not client.collection_exists(collection):
