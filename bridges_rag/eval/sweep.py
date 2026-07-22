@@ -1,10 +1,4 @@
-"""Sweep candidate embedding models over the benchmark, reporting quality and cost.
-
-Each model gets its own Qdrant collection (existing chunks are reused; only the
-vectors are recomputed), is scored with the standard Recall@k/MRR metrics, and is
-also measured for the two costs that don't show up in retrieval quality: how long
-embedding takes, and how much disk it uses (model weights + stored vectors).
-"""
+"""Sweep candidate embedding models over the benchmark, reporting quality and cost."""
 
 from __future__ import annotations
 
@@ -23,7 +17,6 @@ from bridges_rag.index.pipeline import index_chunks
 from bridges_rag.index.qdrant import collection_for
 from bridges_rag.search.retriever import DenseRetriever
 
-# Baseline first, then the alternatives the plan calls out; MiniLM is the speed floor.
 CANDIDATE_MODELS = (
     "BAAI/bge-base-en-v1.5",
     "BAAI/bge-large-en-v1.5",
@@ -49,7 +42,7 @@ class SweepRow:
 
 
 def model_disk_usage_bytes(model_name: str) -> int | None:
-    """Bytes on disk for `model_name` in the local Hugging Face cache, or None if not cached."""
+    """Bytes on disk for `model_name` in the local Hugging Face cache."""
     for repo in scan_cache_dir().repos:
         if repo.repo_id == model_name:
             return repo.size_on_disk

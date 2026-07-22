@@ -23,10 +23,6 @@ def get_client(url: str = DEFAULT_URL) -> QdrantClient:
 
 
 def collection_for(model_name: str) -> str:
-    """Per-model collection name, e.g. 'bge-large-en-v1.5' -> 'bridges_papers__bge-large-en-v1.5'.
-
-    Lets the sweep runner build a separate collection per candidate embedding model.
-    """
     slug = model_name.rsplit("/", 1)[-1].lower()
     return f"{DEFAULT_COLLECTION}__{slug}"
 
