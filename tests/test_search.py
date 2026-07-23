@@ -1,6 +1,7 @@
+import pytest
 from qdrant_client.http import models as qmodels
 
-from bridges_rag.search.search import build_filter
+from bridges_rag.search.search import build_filter, search
 
 
 def _field_condition(condition: object) -> qmodels.FieldCondition:
@@ -35,3 +36,8 @@ def test_build_filter_author_and_year():
     assert filt is not None and isinstance(filt.must, list)
     keys = {_field_condition(c).key for c in filt.must}
     assert keys == {"authors", "year"}
+
+
+def test_search_hybrid_without_sparse_embedder_raises():
+    with pytest.raises(ValueError, match="sparse_embedder"):
+        search(None, None, "query", hybrid=True)  # type: ignore[arg-type]

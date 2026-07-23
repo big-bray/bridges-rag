@@ -1,5 +1,14 @@
+from qdrant_client.http import models as qmodels
+
 from bridges_rag.chunk.models import Chunk
-from bridges_rag.index.qdrant import chunk_payload, chunk_point_id, collection_for
+from bridges_rag.index.qdrant import (
+    DENSE_VECTOR_NAME,
+    SPARSE_VECTOR_NAME,
+    chunk_payload,
+    chunk_point_id,
+    collection_for,
+    point_vectors,
+)
 
 
 def _chunk() -> Chunk:
@@ -40,3 +49,18 @@ def test_collection_for_lowercases_and_has_no_slash():
     slug = collection_for("Some/Weird-Casing")
     assert slug == "bridges_papers__weird-casing"
     assert "/" not in slug
+
+
+def test_point_vectors_dense_only():
+    vectors = [[0.1, 0.2], [0.3, 0.4]]
+    result = point_vectors(vectors)
+    assert result == [{DENSE_VECTOR_NAME: [0.1, 0.2]}, {DENSE_VECTOR_NAME: [0.3, 0.4]}]
+
+
+def test_point_vectors_dense_and_sparse():
+    vectors = [[0.1, 0.2]]
+    sparse = [qmodels.SparseVector(indices=[1, 5], values=[0.9, 0.4])]
+
+    result = point_vectors(vectors, sparse)
+
+    assert result == [{DENSE_VECTOR_NAME: [0.1, 0.2], SPARSE_VECTOR_NAME: sparse[0]}]
