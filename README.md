@@ -110,9 +110,6 @@ Results for n=25, using `bge-base-en-v1.5` dense model and FastEmbed's `Qdrant/b
 Hybrid improves retrieval across the board. RRF fusion pulls exact-term matches (titles, author names, jargon) above where dense-only search ranked them.
 
 ## Future Work
-
-The MVP shipped one retrieval technique (dense embeddings only) so it could serve as a baseline; hybrid search now beats it (above). Remaining deferred experiments will be benchmarked against both using the same Recall@k/MRR eval:
-
 - **Reranking and query expansion** — a cross-encoder reranking pass and/or query expansion on top of hybrid retrieval, to see how far each pushes Recall@k/MRR further.
 - **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
 
