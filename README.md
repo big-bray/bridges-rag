@@ -89,11 +89,31 @@ Results for n=25, cosine similarity:
 
 `nomic-embed-text-v1.5` tops both Recall@1 and MRR but it's the slowest to embed, likely due to its 8192-token context window and lack of a fast ONNX/PyTorch path in this setup. `gte-large` is the best all-around performer when considering embed cost. `all-MiniLM-L6-v2` trails slightly on quality but embeds significantly faster at a fraction of the size, which is a reasonable tradeoff if embedding throughput or storage matters more than the last few points of recall.
 
+### Hybrid search (dense + BM25)
+
+`index --hybrid` additionally computes and stores BM25 sparse vectors (FastEmbed's `Qdrant/bm25`) alongside the dense ones, using Qdrant's named-vector support. `eval --hybrid` fuses dense + sparse retrieval server-side via Qdrant's RRF (Reciprocal Rank Fusion), in a single query:
+
+```sh
+uv run python -m bridges_rag.index.cli --hybrid
+uv run python -m bridges_rag.eval.cli --hybrid
+```
+
+Results for n=25, `bge-base-en-v1.5` dense model in both runs:
+
+| Metric | Dense | Hybrid | Δ |
+|---|---|---|---|
+| Recall@1 | 0.54 | 0.61 | +0.07 |
+| Recall@5 | 0.80 | 0.82 | +0.02 |
+| Recall@10 | 0.89 | 0.89 | — |
+| MRR | 0.907 | 0.973 | +0.066 |
+
+Hybrid improves retrieval across the board, most notably at Recall@1 and MRR — RRF fusion pulls exact-term matches (titles, author names, jargon) above where dense-only search ranked them.
+
 ## Future Work
 
-The MVP ships one retrieval technique (dense embeddings only) so it can serve as a baseline. Deferred experiments will be benchmarked against it using the same Recall@k/MRR eval:
+The MVP shipped one retrieval technique (dense embeddings only) so it could serve as a baseline; hybrid search now beats it (above). Remaining deferred experiments will be benchmarked against both using the same Recall@k/MRR eval:
 
-- **Improved retrieval** — hybrid search (BM25 + embeddings), reranking, and query expansion, to see how far each pushes Recall@k/MRR past the dense-only baseline.
+- **Reranking and query expansion** — a cross-encoder reranking pass and/or query expansion on top of hybrid retrieval, to see how far each pushes Recall@k/MRR further.
 - **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
 
 ## Development
