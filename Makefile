@@ -4,6 +4,7 @@ YEAR ?= 2025
 DATA_DIR ?= data
 QDRANT_URL ?= http://localhost:6333
 HYBRID ?=
+RERANK ?=
 
 setup:
 	uv sync
@@ -25,7 +26,7 @@ index: wait-for-qdrant
 	uv run python -m bridges_rag.index.cli --year $(YEAR) --data-dir $(DATA_DIR) $(if $(HYBRID),--hybrid)
 
 eval:
-	uv run python -m bridges_rag.eval.cli $(if $(HYBRID),--hybrid)
+	uv run python -m bridges_rag.eval.cli $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank)
 
 sweep: wait-for-qdrant
 	uv run python -m bridges_rag.eval.sweep_cli --year $(YEAR) --data-dir $(DATA_DIR)
