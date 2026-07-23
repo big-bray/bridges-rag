@@ -91,14 +91,14 @@ Results for n=25, cosine similarity:
 
 ### Hybrid search (dense + BM25)
 
-`index --hybrid` additionally computes and stores BM25 sparse vectors (FastEmbed's `Qdrant/bm25`) alongside the dense ones, using Qdrant's named-vector support. `eval --hybrid` fuses dense + sparse retrieval server-side via Qdrant's RRF (Reciprocal Rank Fusion), in a single query:
+`index --hybrid` additionally computes and stores BM25 sparse vectors alongside the dense ones. `eval --hybrid` fuses dense + sparse retrieval via RRF:
 
 ```sh
-uv run python -m bridges_rag.index.cli --hybrid
-uv run python -m bridges_rag.eval.cli --hybrid
+make index HYBRID=1
+make eval HYBRID=1
 ```
 
-Results for n=25, `bge-base-en-v1.5` dense model in both runs:
+Results for n=25, using `bge-base-en-v1.5` dense model and FastEmbed's `Qdrant/bm25`:
 
 | Metric | Dense | Hybrid | Δ |
 |---|---|---|---|
@@ -107,7 +107,7 @@ Results for n=25, `bge-base-en-v1.5` dense model in both runs:
 | Recall@10 | 0.89 | 0.89 | — |
 | MRR | 0.907 | 0.973 | +0.066 |
 
-Hybrid improves retrieval across the board, most notably at Recall@1 and MRR — RRF fusion pulls exact-term matches (titles, author names, jargon) above where dense-only search ranked them.
+Hybrid improves retrieval across the board. RRF fusion pulls exact-term matches (titles, author names, jargon) above where dense-only search ranked them.
 
 ## Future Work
 

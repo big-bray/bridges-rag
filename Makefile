@@ -3,6 +3,7 @@
 YEAR ?= 2025
 DATA_DIR ?= data
 QDRANT_URL ?= http://localhost:6333
+HYBRID ?=
 
 setup:
 	uv sync
@@ -21,10 +22,10 @@ extract:
 	uv run python -m bridges_rag.extract.cli --year $(YEAR) --data-dir $(DATA_DIR)
 
 index: wait-for-qdrant
-	uv run python -m bridges_rag.index.cli --year $(YEAR) --data-dir $(DATA_DIR)
+	uv run python -m bridges_rag.index.cli --year $(YEAR) --data-dir $(DATA_DIR) $(if $(HYBRID),--hybrid)
 
 eval:
-	uv run python -m bridges_rag.eval.cli
+	uv run python -m bridges_rag.eval.cli $(if $(HYBRID),--hybrid)
 
 sweep: wait-for-qdrant
 	uv run python -m bridges_rag.eval.sweep_cli --year $(YEAR) --data-dir $(DATA_DIR)
