@@ -109,9 +109,30 @@ Results for n=25, using `bge-base-en-v1.5` dense model and FastEmbed's `Qdrant/b
 
 Hybrid improves retrieval across the board. RRF fusion pulls exact-term matches (titles, author names, jargon) above where dense-only search ranked them.
 
+### Cross-encoder reranking
+
+`eval --rerank` fetches a wide candidate pool from the base retriever and rescores it with a cross-encoder that scores each (query, passage) pair jointly instead of comparing independently-embedded vectors:
+
+```sh
+make eval RERANK=1
+make eval HYBRID=1 RERANK=1
+```
+
+Results for n=25, `bge-base-en-v1.5` dense model, `bge-reranker-base` cross-encoder:
+
+| Config | Recall@1 | Recall@5 | Recall@10 | MRR | Avg query (ms) |
+|---|---|---|---|---|---|
+| Dense | 0.54 | 0.80 | 0.89 | 0.907 | 50 |
+| Dense → Rerank | 0.41 | 0.81 | 0.92 | 0.806 | 3,004 |
+| Hybrid | 0.61 | 0.82 | 0.89 | 0.973 | 46 |
+| Hybrid → Rerank | 0.39 | 0.82 | 0.89 | 0.788 | 2,425 |
+
+Reranking is a net loss on this benchmark: it drops recall and MRR in both the dense and hybrid case, while making queries >50x slower.
+
 ## Future Work
-- **Reranking and query expansion** — a cross-encoder reranking pass and/or query expansion on top of hybrid retrieval, to see how far each pushes Recall@k/MRR further.
+- **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.
 - **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
+- **Mathematical symbols and images** — `extract` currently flattens PDFs to plain markdown text; PyMuPDF4LLM's handling of formulas is inconsistent (equations often come through as mangled Unicode or drop out entirely), and embedded figures — tiling diagrams, sculpture photos, geometric constructions, all central to this corpus — are ignored altogether, so no chunk, embedding, or citation ever represents them. A question that hinges on a specific formula or references "the spiral pattern in Figure 3" is currently unanswerable no matter how good retrieval gets. Worth evaluating: a formula-aware extractor (e.g. Nougat, Mathpix) to preserve LaTeX in chunk text, and a multimodal embedding model (e.g. CLIP-style) to index figures so image-referencing questions become retrievable and citable alongside text.
 
 ## Development
 
