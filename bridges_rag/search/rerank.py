@@ -1,9 +1,4 @@
-"""Cross-encoder reranking: retrieve a wide candidate pool cheaply, rerank precisely.
-
-A cross-encoder scores (query, passage) pairs jointly instead of comparing
-independently-embedded vectors, which is more precise but too slow to run over
-a whole collection — so it only ever reranks a small pool from a base Retriever.
-"""
+"""Cross-encoder reranking: retrieve a wide candidate pool cheaply, rerank precisely."""
 
 from __future__ import annotations
 

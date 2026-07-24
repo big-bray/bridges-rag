@@ -111,7 +111,7 @@ Hybrid improves retrieval across the board. RRF fusion pulls exact-term matches 
 
 ### Cross-encoder reranking
 
-`eval --rerank` fetches a wide candidate pool (`--pool-size`, default 100) from the base retriever (dense or hybrid) and rescores it with a cross-encoder (`--reranker-model-name`, default `BAAI/bge-reranker-base`) that scores each (query, passage) pair jointly instead of comparing independently-embedded vectors:
+`eval --rerank` fetches a wide candidate pool from the base retriever and rescores it with a cross-encoder that scores each (query, passage) pair jointly instead of comparing independently-embedded vectors:
 
 ```sh
 make eval RERANK=1
@@ -127,11 +127,12 @@ Results for n=25, `bge-base-en-v1.5` dense model, `bge-reranker-base` cross-enco
 | Hybrid | 0.61 | 0.82 | 0.89 | 0.973 | 46 |
 | Hybrid → Rerank | 0.39 | 0.82 | 0.89 | 0.788 | 2,425 |
 
-Reranking is a net loss on this benchmark: it gives a small Recall@5/10 bump but **drops** Recall@1 and MRR in both the dense and hybrid case, while making queries ~50-65x slower — the cross-encoder pass dominates latency. It's not adopted as the default retrieval path; the negative result is left here since it's a real finding, not a bug. It may fare differently on questions with looser gold-paper matches, or with a larger/different reranker model, but as configured here it doesn't earn its cost.
+Reranking is a net loss on this benchmark: it drops recall and MRR in both the dense and hybrid case, while making queries >50x slower.
 
 ## Future Work
 - **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.
 - **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
+- **Mathematical symbols and images** — `extract` currently flattens PDFs to plain markdown text; PyMuPDF4LLM's handling of formulas is inconsistent (equations often come through as mangled Unicode or drop out entirely), and embedded figures — tiling diagrams, sculpture photos, geometric constructions, all central to this corpus — are ignored altogether, so no chunk, embedding, or citation ever represents them. A question that hinges on a specific formula or references "the spiral pattern in Figure 3" is currently unanswerable no matter how good retrieval gets. Worth evaluating: a formula-aware extractor (e.g. Nougat, Mathpix) to preserve LaTeX in chunk text, and a multimodal embedding model (e.g. CLIP-style) to index figures so image-referencing questions become retrievable and citable alongside text.
 
 ## Development
 
