@@ -9,7 +9,12 @@ from bridges_rag.embed.embedder import DEFAULT_MODEL_NAME, Embedder
 from bridges_rag.embed.sparse import DEFAULT_SPARSE_MODEL_NAME, SparseEmbedder
 from bridges_rag.eval.benchmark import load_benchmark
 from bridges_rag.eval.runner import evaluate, format_results_table
+from bridges_rag.graph.db import DEFAULT_PASSWORD, DEFAULT_URI, DEFAULT_USER, get_driver
+from bridges_rag.graph.pipeline import entity_lists, representative_chunks
+from bridges_rag.graph.retriever import GraphRetriever, Neo4jGraphTraversal
+from bridges_rag.index.pipeline import load_chunks
 from bridges_rag.index.qdrant import DEFAULT_COLLECTION, DEFAULT_URL, get_client
+from bridges_rag.ingest.manifest import read_manifest
 from bridges_rag.search.rerank import (
     DEFAULT_RERANKER_MODEL_NAME,
     CrossEncoderReranker,
@@ -43,6 +48,19 @@ def main() -> None:
         default=100,
         help="candidate pool size fetched before reranking (only used with --rerank)",
     )
+    parser.add_argument(
+        "--graph",
+        action="store_true",
+        help="fuse in metadata-graph traversal (co-authorship) via RRF; "
+        "the graph must be built first with `python -m bridges_rag.graph.cli`",
+    )
+    parser.add_argument(
+        "--year", type=int, default=2025, help="year to load manifest/chunks for (--graph only)"
+    )
+    parser.add_argument("--data-dir", type=Path, default=Path("data"))
+    parser.add_argument("--neo4j-uri", default=DEFAULT_URI)
+    parser.add_argument("--neo4j-user", default=DEFAULT_USER)
+    parser.add_argument("--neo4j-password", default=DEFAULT_PASSWORD)
     args = parser.parse_args()
 
     questions = load_benchmark(args.benchmark)
@@ -57,6 +75,19 @@ def main() -> None:
         retriever = DenseRetriever(client, embedder, collection=args.collection)
 
     mode = "hybrid" if args.hybrid else "dense"
+    if args.graph:
+        papers = read_manifest(args.data_dir / str(args.year) / "manifest.jsonl")
+        chunks = load_chunks(args.year, args.data_dir)
+        author_names, titles = entity_lists(papers)
+        driver = get_driver(args.neo4j_uri, args.neo4j_user, args.neo4j_password)
+        retriever = GraphRetriever(
+            base=retriever,
+            traverse=Neo4jGraphTraversal(driver),
+            author_names=author_names,
+            titles=titles,
+            chunk_by_paper=representative_chunks(chunks),
+        )
+        mode += "→graph"
     if args.rerank:
         reranker = CrossEncoderReranker(args.reranker_model_name)
         retriever = RerankRetriever(retriever, reranker, pool_size=args.pool_size)
