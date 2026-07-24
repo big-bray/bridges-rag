@@ -9,6 +9,11 @@ from bridges_rag.embed.embedder import DEFAULT_MODEL_NAME, Embedder
 from bridges_rag.embed.sparse import DEFAULT_SPARSE_MODEL_NAME, SparseEmbedder
 from bridges_rag.eval.benchmark import load_benchmark
 from bridges_rag.eval.runner import evaluate, format_results_table
+from bridges_rag.graph.concept_retriever import (
+    ConceptGraphRetriever,
+    Neo4jConceptTraversal,
+    fetch_concept_names,
+)
 from bridges_rag.graph.db import DEFAULT_PASSWORD, DEFAULT_URI, DEFAULT_USER, get_driver
 from bridges_rag.graph.pipeline import entity_lists, representative_chunks
 from bridges_rag.graph.retriever import GraphRetriever, Neo4jGraphTraversal
@@ -55,7 +60,16 @@ def main() -> None:
         "the graph must be built first with `python -m bridges_rag.graph.cli`",
     )
     parser.add_argument(
-        "--year", type=int, default=2025, help="year to load manifest/chunks for (--graph only)"
+        "--concepts",
+        action="store_true",
+        help="fuse in concept-subgraph traversal (MENTIONS/RELATED_TO) via RRF; the concept "
+        "graph must be built first with `python -m bridges_rag.graph.concepts_cli`",
+    )
+    parser.add_argument(
+        "--year",
+        type=int,
+        default=2025,
+        help="year to load manifest/chunks for (--graph/--concepts only)",
     )
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--neo4j-uri", default=DEFAULT_URI)
@@ -88,6 +102,16 @@ def main() -> None:
             chunk_by_paper=representative_chunks(chunks),
         )
         mode += "→graph"
+    if args.concepts:
+        chunks = load_chunks(args.year, args.data_dir)
+        driver = get_driver(args.neo4j_uri, args.neo4j_user, args.neo4j_password)
+        retriever = ConceptGraphRetriever(
+            base=retriever,
+            traverse=Neo4jConceptTraversal(driver),
+            concept_names=fetch_concept_names(driver),
+            chunk_by_paper=representative_chunks(chunks),
+        )
+        mode += "→concepts"
     if args.rerank:
         reranker = CrossEncoderReranker(args.reranker_model_name)
         retriever = RerankRetriever(retriever, reranker, pool_size=args.pool_size)
