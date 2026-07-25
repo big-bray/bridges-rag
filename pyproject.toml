@@ -68,6 +68,8 @@ module = [
     "test_bibtex",
     "test_extract_pdf",
     "test_extract_pipeline",
+    "test_figures_pdf",
+    "test_figures_pipeline",
     "test_chunker",
     "test_qdrant",
     "test_embedder",

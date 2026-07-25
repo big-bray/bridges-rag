@@ -1,4 +1,4 @@
-.PHONY: setup wait-for-qdrant ingest extract index eval sweep build all clean lint fmt test
+.PHONY: setup wait-for-qdrant ingest extract figures index eval sweep build all clean lint fmt test
 
 YEAR ?= 2025
 DATA_DIR ?= data
@@ -21,6 +21,9 @@ ingest:
 
 extract:
 	uv run python -m bridges_rag.extract.cli --year $(YEAR) --data-dir $(DATA_DIR)
+
+figures:
+	uv run python -m bridges_rag.figures.cli --year $(YEAR) --data-dir $(DATA_DIR)
 
 index: wait-for-qdrant
 	uv run python -m bridges_rag.index.cli --year $(YEAR) --data-dir $(DATA_DIR) $(if $(HYBRID),--hybrid)
