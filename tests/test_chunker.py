@@ -112,6 +112,45 @@ def test_chunk_paper_hard_splits_a_single_unbreakable_paragraph():
     assert huge.endswith(chunks[-1].text.replace("\n\n", ""))
 
 
+def test_chunk_paper_hard_split_does_not_split_a_sup_tag():
+    # No sentence punctuation, so this falls all the way to the char-count hard split.
+    # target_tokens=11 -> chunk_chars=44, which lands squarely inside the <sup> tag
+    # (spanning chars 40-53) unless the splitter pushes the cut past it.
+    body = "x" * 40 + "<sup>-1</sup>" + "x" * 40
+    pages = [PageMarkdown(pdf_page=1, proceedings_page=1, markdown=body)]
+
+    chunks = chunk_paper(_paper(), pages, target_tokens=11, overlap_tokens=2)
+
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk.text.count("<sup>") == chunk.text.count("</sup>")
+    assert "<sup>-1</sup>" in "".join(c.text for c in chunks)
+
+
+def test_chunk_paper_hard_split_does_not_split_an_italic_formula_span():
+    body = "x" * 40 + "_formula_" + "x" * 40
+    pages = [PageMarkdown(pdf_page=1, proceedings_page=1, markdown=body)]
+
+    chunks = chunk_paper(_paper(), pages, target_tokens=11, overlap_tokens=2)
+
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk.text.count("_") % 2 == 0
+    assert "_formula_" in "".join(c.text for c in chunks)
+
+
+def test_chunk_paper_hard_split_makes_progress_past_an_oversized_protected_span():
+    # A protected span longer than the char budget must still force forward progress,
+    # not get the splitter stuck re-emitting the same offset.
+    body = "<sup>" + "y" * 200 + "</sup>"
+    pages = [PageMarkdown(pdf_page=1, proceedings_page=1, markdown=body)]
+
+    chunks = chunk_paper(_paper(), pages, target_tokens=5, overlap_tokens=1)
+
+    assert len(chunks) >= 1
+    assert body.startswith(chunks[0].text.replace("\n\n", ""))
+
+
 def test_chunk_paper_empty_pages_returns_no_chunks():
     assert chunk_paper(_paper(), []) == []
 
