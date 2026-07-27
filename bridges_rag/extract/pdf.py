@@ -7,6 +7,7 @@ from pathlib import Path
 import pymupdf
 import pymupdf4llm
 
+from bridges_rag.extract.math_glyphs import fix_garbled_math_glyphs
 from bridges_rag.extract.models import PageMarkdown
 
 
@@ -23,7 +24,7 @@ def _extract_pages_from_doc(
             PageMarkdown(
                 pdf_page=pdf_page,
                 proceedings_page=proceedings_page,
-                markdown=chunk["text"],
+                markdown=fix_garbled_math_glyphs(chunk["text"]),
             )
         )
     return pages

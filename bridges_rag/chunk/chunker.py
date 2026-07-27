@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path
 
 from bridges_rag.chunk.models import Chunk
@@ -19,6 +20,12 @@ DEFAULT_OVERLAP_TOKENS = 50
 _HEADING_RE = re.compile(r"^#{1,6}\s+\S.*$")
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 _CHARS_PER_TOKEN = 4
+
+# <sup>/<sub> hold exponents and subscripts (e.g. `_f_<sup>-1</sup>`) and single
+# underscores wrap italic math variables (e.g. `_\U0001d703_`) -- markdown emitted by
+# pymupdf4llm for inline formulas. Splitting inside either garbles the formula, so the
+# hard-split fallback below must never cut through one.
+_PROTECTED_SPAN_RE = re.compile(r"<su[bp]>.*?</su[bp]>|_[^_\n]+_")
 
 
 def estimate_tokens(text: str) -> int:
@@ -81,10 +88,27 @@ def _split_long_paragraph(para: _Paragraph, target_tokens: int) -> list[_Paragra
 
     # No sentence boundaries to split on (e.g. garbled extraction) — hard-split by chars.
     chunk_chars = target_tokens * _CHARS_PER_TOKEN
+    cut_points = _safe_cut_points(para.text, chunk_chars)
     return [
-        _Paragraph(para.text[i : i + chunk_chars], para.pdf_page, para.proceedings_page)
-        for i in range(0, len(para.text), chunk_chars)
+        _Paragraph(para.text[start:end], para.pdf_page, para.proceedings_page)
+        for start, end in pairwise(cut_points)
     ]
+
+
+def _safe_cut_points(text: str, chunk_chars: int) -> list[int]:
+    """Offsets to hard-split `text` at, pushed forward past any protected span
+    (a <sup>/<sub> tag or an underscore-wrapped formula) they would otherwise land inside."""
+    protected = [m.span() for m in _PROTECTED_SPAN_RE.finditer(text)]
+
+    points = [0]
+    while points[-1] < len(text):
+        target = points[-1] + chunk_chars
+        for start, end in protected:
+            if start < target < end:
+                target = end
+                break
+        points.append(min(target, len(text)))
+    return points
 
 
 def _pack_section(
