@@ -149,13 +149,30 @@ when nothing in the query links to a known author or title:
 make eval GRAPH=1
 ```
 
-The current 25-question benchmark has no co-authorship-style questions, so `--graph` reproduces the
-dense baseline exactly (Recall@1 0.54, Recall@5 0.80, Recall@10 0.89, MRR 0.907) — confirming it
-doesn't regress the existing benchmark. On a genuinely relational query it does change the ranking,
-e.g. "What did Kristoffel Lieten's collaborators write about?" pulls the co-authored paper to rank 1
-where dense-only ranked it lower. Extending the benchmark with a relational-question subset (Stream C's
-own evaluation step) is future work, as is the LLM-extracted concept graph (C2) and community
-summaries (C3).
+The main 25-question benchmark has no co-authorship-style questions, so `--graph` reproduces the
+dense baseline on it exactly (Recall@1 0.54, Recall@5 0.80, Recall@10 0.89, MRR 0.907) — confirming
+it doesn't regress non-relational retrieval.
+
+A second benchmark, `eval/benchmark_relational.jsonl` (4 hand-written questions, gold labels derived
+from real co-authorship pairs in the manifest — e.g. "What did Nadir Hajouji's collaborators write
+about?" resolves through his co-author Steve Trettel to a solo paper on an unrelated topic that shares
+no vocabulary with the query), isolates exactly the case similarity search can't handle:
+
+```sh
+make eval BENCHMARK=eval/benchmark_relational.jsonl              # dense only
+make eval BENCHMARK=eval/benchmark_relational.jsonl GRAPH=1      # dense + graph
+```
+
+| Metric | Dense | Dense → Graph | Δ |
+|---|---|---|---|
+| Recall@1 | 0.25 | 0.46 | +0.21 |
+| Recall@5 | 0.42 | 1.00 | +0.58 |
+| Recall@10 | 0.50 | 1.00 | +0.50 |
+| MRR | 0.394 | 0.875 | +0.481 |
+
+Graph fusion roughly doubles Recall@5/MRR on questions that hinge on co-authorship, exactly where pure
+embedding similarity has no signal to work with. The LLM-extracted concept graph (C2) and community
+summaries (C3) remain future work.
 
 ## Future Work
 - **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.

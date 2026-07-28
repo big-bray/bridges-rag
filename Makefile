@@ -6,6 +6,7 @@ QDRANT_URL ?= http://localhost:6333
 HYBRID ?=
 RERANK ?=
 GRAPH ?=
+BENCHMARK ?= eval/benchmark.jsonl
 
 setup:
 	uv sync
@@ -30,7 +31,7 @@ graph:
 	uv run python -m bridges_rag.graph.cli --year $(YEAR) --data-dir $(DATA_DIR)
 
 eval:
-	uv run python -m bridges_rag.eval.cli $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank) $(if $(GRAPH),--graph --year $(YEAR) --data-dir $(DATA_DIR))
+	uv run python -m bridges_rag.eval.cli --benchmark $(BENCHMARK) $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank) $(if $(GRAPH),--graph --year $(YEAR) --data-dir $(DATA_DIR))
 
 sweep: wait-for-qdrant
 	uv run python -m bridges_rag.eval.sweep_cli --year $(YEAR) --data-dir $(DATA_DIR)
