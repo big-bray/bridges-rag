@@ -1,11 +1,3 @@
-"""Build the metadata graph (Paper, Author, Year nodes) in Neo4j from the manifest.
-
-No LLM: nodes and edges come straight from manifest fields. Reference lists aren't
-parsed into CITES edges — resolving a free-text citation to a specific paper_id
-in this corpus needs fuzzy title/author matching that isn't reliable enough to
-ship without its own benchmark, so it's left for a future pass.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -59,8 +51,6 @@ def clear_graph(driver: GraphDriver) -> None:
 
 
 def build_graph(papers: Iterable[Paper], driver: GraphDriver) -> GraphStats:
-    """(Re)build the metadata graph from manifest papers. Idempotent (MERGE-based),
-    safe to re-run after a fresh ingest."""
     papers = list(papers)
     ensure_constraints(driver)
 

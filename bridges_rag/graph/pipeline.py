@@ -1,5 +1,3 @@
-"""Wire manifest + chunks into the inputs a GraphRetriever needs."""
-
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence

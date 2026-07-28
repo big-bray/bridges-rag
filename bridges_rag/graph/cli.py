@@ -25,7 +25,7 @@ def main() -> None:
     parser.add_argument(
         "--clear",
         action="store_true",
-        help="wipe the graph before rebuilding (otherwise MERGE-based rebuild is additive-safe)",
+        help="wipe the graph before rebuilding",
     )
     args = parser.parse_args()
 

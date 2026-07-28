@@ -1,11 +1,3 @@
-"""Neo4j connection helper.
-
-`GraphDriver`/`GraphSession` are structural (Protocol) stand-ins for neo4j's `Driver`/
-`Session` — just the `.session()`/`.run()` surface `build_graph` and `GraphRetriever`
-actually use. That lets tests pass a lightweight fake instead of a real Neo4j instance,
-the same way `Retriever`/`Reranker` are Protocols elsewhere in this codebase.
-"""
-
 from __future__ import annotations
 
 from typing import Any, Protocol

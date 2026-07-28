@@ -1,7 +1,3 @@
-"""Graph retriever v1: entity-link authors/titles from the query, traverse the metadata
-graph for relational hits (co-authorship), and fuse with a base vector retriever via RRF.
-"""
-
 from __future__ import annotations
 
 from collections import defaultdict
@@ -109,13 +105,7 @@ class Neo4jGraphTraversal:
 
 @dataclass
 class GraphRetriever:
-    """Retriever: fuse a base vector retriever with metadata-graph traversal.
-
-    Entity-links author names / paper titles mentioned in the query, traverses the
-    graph for relational hits (e.g. "who has Alison Martin collaborated with"), and
-    fuses the resulting paper ranking with the base retriever's via RRF. Falls back
-    to the base retriever untouched when nothing links.
-    """
+    """Retriever: fuse a base vector retriever with metadata-graph traversal."""
 
     base: Retriever
     traverse: GraphTraversal
