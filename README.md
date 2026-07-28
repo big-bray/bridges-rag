@@ -131,10 +131,9 @@ Reranking is a net loss on this benchmark: it drops recall and MRR in both the d
 
 ### Metadata graph (GraphRAG, experimental)
 
-Similarity search can't answer relational questions ("what has X's collaborators written about?")
-because nothing in a chunk's embedding encodes co-authorship. `graph.cli` builds a `Paper`/`Author`/`Year`
-graph straight from the manifest into Neo4j (`AUTHORED`, `CO_AUTHORED_WITH`, `PUBLISHED_IN` edges,
-no LLM):
+Similarity search can't answer relational questions (such as "what has X's collaborators written about?")
+because nothing in a chunk's embedding encodes co-authorship. We build an experimental `Paper`/`Author`/`Year`
+graph straight from the manifest into Neo4j with `AUTHORED`, `CO_AUTHORED_WITH`, `PUBLISHED_IN` edges:
 
 ```sh
 make graph
@@ -142,21 +141,16 @@ make graph
 
 `eval --graph` wraps the base retriever in a `GraphRetriever`: it substring-matches author names and
 paper titles mentioned in the query, traverses `AUTHORED`/`CO_AUTHORED_WITH` for relational hits, and
-fuses that ranking with the base retriever's via RRF — falling back to the base retriever untouched
-when nothing in the query links to a known author or title:
+fuses that ranking with the base retriever's via RRF:
 
 ```sh
 make eval GRAPH=1
 ```
 
 The main 25-question benchmark has no co-authorship-style questions, so `--graph` reproduces the
-dense baseline on it exactly (Recall@1 0.54, Recall@5 0.80, Recall@10 0.89, MRR 0.907) — confirming
-it doesn't regress non-relational retrieval.
+dense baseline on it exactly.
 
-A second benchmark, `eval/benchmark_relational.jsonl` (4 hand-written questions, gold labels derived
-from real co-authorship pairs in the manifest — e.g. "What did Nadir Hajouji's collaborators write
-about?" resolves through his co-author Steve Trettel to a solo paper on an unrelated topic that shares
-no vocabulary with the query), isolates exactly the case similarity search can't handle:
+A second benchmark, `eval/benchmark_relational.jsonl` adds four hand-written questions that similarity search can't handle.
 
 ```sh
 make eval BENCHMARK=eval/benchmark_relational.jsonl              # dense only
@@ -170,13 +164,10 @@ make eval BENCHMARK=eval/benchmark_relational.jsonl GRAPH=1      # dense + graph
 | Recall@10 | 0.50 | 1.00 | +0.50 |
 | MRR | 0.394 | 0.875 | +0.481 |
 
-Graph fusion roughly doubles Recall@5/MRR on questions that hinge on co-authorship, exactly where pure
-embedding similarity has no signal to work with. The LLM-extracted concept graph (C2) and community
-summaries (C3) remain future work.
 
 ## Future Work
 - **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.
-- **Concept graph & community summaries (GraphRAG C2/C3)** — the metadata graph above covers co-authorship; extracting concept/technique entities per chunk with a local LLM (Ollama) and detecting Leiden communities would extend the graph to thematic and multi-hop questions.
+- **Concept graph & community summaries** — the metadata graph above covers co-authorship; extracting concept/technique entities per chunk with a local LLM (Ollama) and detecting Leiden communities would extend the graph to thematic and multi-hop questions.
 - **Mathematical symbols and images** — `extract` currently flattens PDFs to plain markdown text; PyMuPDF4LLM's handling of formulas is inconsistent (equations often come through as mangled Unicode or drop out entirely), and embedded figures — tiling diagrams, sculpture photos, geometric constructions, all central to this corpus — are ignored altogether, so no chunk, embedding, or citation ever represents them. A question that hinges on a specific formula or references "the spiral pattern in Figure 3" is currently unanswerable no matter how good retrieval gets. Worth evaluating: a formula-aware extractor (e.g. Nougat, Mathpix) to preserve LaTeX in chunk text, and a multimodal embedding model (e.g. CLIP-style) to index figures so image-referencing questions become retrievable and citable alongside text.
 
 ## Development
