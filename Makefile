@@ -1,10 +1,12 @@
-.PHONY: setup wait-for-qdrant ingest extract index eval sweep build all clean lint fmt test
+.PHONY: setup wait-for-qdrant ingest extract index graph eval sweep build all clean lint fmt test
 
 YEAR ?= 2025
 DATA_DIR ?= data
 QDRANT_URL ?= http://localhost:6333
 HYBRID ?=
 RERANK ?=
+GRAPH ?=
+BENCHMARK ?= eval/benchmark.jsonl
 
 setup:
 	uv sync
@@ -25,8 +27,11 @@ extract:
 index: wait-for-qdrant
 	uv run python -m bridges_rag.index.cli --year $(YEAR) --data-dir $(DATA_DIR) $(if $(HYBRID),--hybrid)
 
+graph:
+	uv run python -m bridges_rag.graph.cli --year $(YEAR) --data-dir $(DATA_DIR)
+
 eval:
-	uv run python -m bridges_rag.eval.cli $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank)
+	uv run python -m bridges_rag.eval.cli --benchmark $(BENCHMARK) $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank) $(if $(GRAPH),--graph --year $(YEAR) --data-dir $(DATA_DIR))
 
 sweep: wait-for-qdrant
 	uv run python -m bridges_rag.eval.sweep_cli --year $(YEAR) --data-dir $(DATA_DIR)

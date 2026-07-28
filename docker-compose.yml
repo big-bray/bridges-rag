@@ -6,3 +6,13 @@ services:
       - "6334:6334" # gRPC API
     volumes:
       - ./data/qdrant:/qdrant/storage
+
+  neo4j:
+    image: neo4j:5.26
+    ports:
+      - "7474:7474" # HTTP API + browser (http://localhost:7474)
+      - "7687:7687" # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/bridgesrag
+    volumes:
+      - ./data/neo4j:/data

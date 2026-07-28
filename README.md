@@ -29,7 +29,7 @@ PDFs to disk instead, e.g. for offline re-extraction.
 ## Setup
 
 ```sh
-make setup   # uv sync + start Qdrant (docker compose) + wait for it to be ready
+make setup   # uv sync + start Qdrant + Neo4j (docker compose) + wait for Qdrant to be ready
 ```
 
 ## Build the index
@@ -40,8 +40,8 @@ Runs ingest → extract → index → eval for one proceedings year (defaults to
 make build
 ```
 
-Or run a stage at a time: `make ingest`, `make extract`, `make index`, `make eval`. Override
-`YEAR` or `DATA_DIR` as needed, e.g. `make build YEAR=2025 DATA_DIR=data`.
+Or run a stage at a time: `make ingest`, `make extract`, `make index`, `make graph`, `make eval`.
+Override `YEAR` or `DATA_DIR` as needed, e.g. `make build YEAR=2025 DATA_DIR=data`.
 
 ## Usage
 
@@ -129,9 +129,45 @@ Results for n=25, `bge-base-en-v1.5` dense model, `bge-reranker-base` cross-enco
 
 Reranking is a net loss on this benchmark: it drops recall and MRR in both the dense and hybrid case, while making queries >50x slower.
 
+### Metadata graph (GraphRAG, experimental)
+
+Similarity search can't answer relational questions (such as "what has X's collaborators written about?")
+because nothing in a chunk's embedding encodes co-authorship. We build an experimental `Paper`/`Author`/`Year`
+graph straight from the manifest into Neo4j with `AUTHORED`, `CO_AUTHORED_WITH`, `PUBLISHED_IN` edges:
+
+```sh
+make graph
+```
+
+`eval --graph` wraps the base retriever in a `GraphRetriever`: it substring-matches author names and
+paper titles mentioned in the query, traverses `AUTHORED`/`CO_AUTHORED_WITH` for relational hits, and
+fuses that ranking with the base retriever's via RRF:
+
+```sh
+make eval GRAPH=1
+```
+
+The main 25-question benchmark has no co-authorship-style questions, so `--graph` reproduces the
+dense baseline on it exactly.
+
+A second benchmark, `eval/benchmark_relational.jsonl` adds four hand-written questions that similarity search can't handle.
+
+```sh
+make eval BENCHMARK=eval/benchmark_relational.jsonl              # dense only
+make eval BENCHMARK=eval/benchmark_relational.jsonl GRAPH=1      # dense + graph
+```
+
+| Metric | Dense | Dense → Graph | Δ |
+|---|---|---|---|
+| Recall@1 | 0.25 | 0.46 | +0.21 |
+| Recall@5 | 0.42 | 1.00 | +0.58 |
+| Recall@10 | 0.50 | 1.00 | +0.50 |
+| MRR | 0.394 | 0.875 | +0.481 |
+
+
 ## Future Work
 - **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.
-- **Knowledge graph (GraphRAG)** — extract entities and relationships into a Neo4j graph and combine graph traversal with vector retrieval, aimed at relational questions (e.g. "who has collaborated with X on tiling papers") that similarity search alone can't answer.
+- **Concept graph & community summaries** — the metadata graph above covers co-authorship; extracting concept/technique entities per chunk with a local LLM (Ollama) and detecting Leiden communities would extend the graph to thematic and multi-hop questions.
 - **Mathematical symbols and images** — `extract` currently flattens PDFs to plain markdown text; PyMuPDF4LLM's handling of formulas is inconsistent (equations often come through as mangled Unicode or drop out entirely), and embedded figures — tiling diagrams, sculpture photos, geometric constructions, all central to this corpus — are ignored altogether, so no chunk, embedding, or citation ever represents them. A question that hinges on a specific formula or references "the spiral pattern in Figure 3" is currently unanswerable no matter how good retrieval gets. Worth evaluating: a formula-aware extractor (e.g. Nougat, Mathpix) to preserve LaTeX in chunk text, and a multimodal embedding model (e.g. CLIP-style) to index figures so image-referencing questions become retrievable and citable alongside text.
 
 ## Development
