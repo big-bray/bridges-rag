@@ -148,9 +148,11 @@ make eval GRAPH=1
 ```
 
 The main 25-question benchmark has no co-authorship-style questions, so `--graph` reproduces the
-dense baseline on it exactly.
+dense baseline exactly (Recall@1 0.54, Recall@5 0.80, Recall@10 0.89, MRR 0.907) — confirming it
+doesn't regress what similarity search already handles.
 
-A second benchmark, `eval/benchmark_relational.jsonl` adds four hand-written questions that similarity search can't handle.
+A second benchmark, `eval/benchmark_relational.jsonl`, adds four hand-written questions that similarity
+search can't handle:
 
 ```sh
 make eval BENCHMARK=eval/benchmark_relational.jsonl              # dense only
@@ -164,10 +166,47 @@ make eval BENCHMARK=eval/benchmark_relational.jsonl GRAPH=1      # dense + graph
 | Recall@10 | 0.50 | 1.00 | +0.50 |
 | MRR | 0.394 | 0.875 | +0.481 |
 
+### Concept graph (LLM extraction)
+
+Requires [Ollama](https://ollama.com) running locally with the model pulled (`ollama pull llama3.2`)
+— it isn't in `docker-compose.yml`, unlike Qdrant/Neo4j.
+
+Co-authorship links papers by who wrote them; it says nothing about what they're *about*. `concepts_cli`
+extracts concept/technique entities and (subject, relation, object) triples per chunk with a local
+Ollama model (`llama3.2` by default), JSON-schema-constrained via Pydantic so the output always parses.
+Extractions are cached to `data/<year>/concepts.jsonl` (rerunning reuses the cache; `--force` re-extracts,
+`--limit` tries it out cheaply) and written into Neo4j as `MENTIONS` (Paper→Concept) and `RELATED_TO`
+(Concept↔Concept) edges alongside the C1 metadata graph:
+
+```sh
+make concepts
+```
+
+The extraction prompt explicitly tells the model to return empty lists for bylines/addresses/front
+matter rather than guess — an earlier version of the prompt leaked its own few-shot examples as
+hallucinated entities on content-free chunks (e.g. author bio snippets), which a live check against
+real chunks caught before it shipped.
+
+`eval --concepts` wraps the base retriever in a `ConceptGraphRetriever`: it substring-matches known
+concept names mentioned in the query, traverses `MENTIONS`/`RELATED_TO` for papers that discuss that
+concept or one related to it, and fuses that ranking with the base retriever's via RRF (same fusion
+helper as `--graph`, so the two compose):
+
+```sh
+make eval CONCEPTS=1
+make eval GRAPH=1 CONCEPTS=1
+```
+
+This doesn't regress the main 25-question benchmark, but unlike `--graph` it has no measured win yet:
+there's no concept-style equivalent of `eval/benchmark_relational.jsonl`, so the table above has no
+counterpart here. A live check against Neo4j confirmed the traversal correctly surfaces both a paper
+that directly mentions a linked concept and a second paper reached only by hopping a `RELATED_TO` edge
+to a related concept mentioned there — but that's a correctness check, not an evaluation. Writing a
+concept-question benchmark and reporting the delta is the next step.
 
 ## Future Work
 - **Query expansion** — rewrite or expand the query before retrieval, to see whether it pushes Recall@k/MRR further than hybrid search alone.
-- **Concept graph & community summaries** — the metadata graph above covers co-authorship; extracting concept/technique entities per chunk with a local LLM (Ollama) and detecting Leiden communities would extend the graph to thematic and multi-hop questions.
+- **Community summaries (GraphRAG C3)** — Leiden community detection + LLM summaries over the concept graph above, for global/thematic questions ("what are the major tiling approaches at Bridges") rather than single-concept lookups.
 - **Mathematical symbols and images** — `extract` currently flattens PDFs to plain markdown text; PyMuPDF4LLM's handling of formulas is inconsistent (equations often come through as mangled Unicode or drop out entirely), and embedded figures — tiling diagrams, sculpture photos, geometric constructions, all central to this corpus — are ignored altogether, so no chunk, embedding, or citation ever represents them. A question that hinges on a specific formula or references "the spiral pattern in Figure 3" is currently unanswerable no matter how good retrieval gets. Worth evaluating: a formula-aware extractor (e.g. Nougat, Mathpix) to preserve LaTeX in chunk text, and a multimodal embedding model (e.g. CLIP-style) to index figures so image-referencing questions become retrievable and citable alongside text.
 
 ## Development

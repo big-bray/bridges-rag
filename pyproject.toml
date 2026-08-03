@@ -86,6 +86,7 @@ module = [
     "test_graph_concepts_store",
     "test_graph_concepts_pipeline",
     "test_graph_build_concepts",
+    "test_graph_concept_retriever",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
