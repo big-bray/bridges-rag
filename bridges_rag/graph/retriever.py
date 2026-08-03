@@ -70,6 +70,33 @@ def dedup_paper_ids(results: list[SearchResult]) -> list[str]:
     return ranked
 
 
+def fuse_graph_ranking(
+    base_results: list[SearchResult],
+    graph_ranking: list[str],
+    chunk_by_paper: dict[str, Chunk],
+    *,
+    top_k: int,
+) -> list[SearchResult]:
+    """Fuse a base retriever's chunk-level results with a paper-id graph ranking via RRF,
+    backfilling graph-only hits from `chunk_by_paper`. Falls back to `base_results` untouched
+    when `graph_ranking` is empty (nothing in the query linked to the graph)."""
+    if not graph_ranking:
+        return base_results[:top_k]
+
+    dense_ranking = dedup_paper_ids(base_results)
+    fused_ranking = rrf_fuse([dense_ranking, graph_ranking])[:top_k]
+
+    by_paper = {result.chunk.paper_id: result for result in base_results}
+    fused_results: list[SearchResult] = []
+    for rank, paper_id in enumerate(fused_ranking, start=1):
+        if paper_id in by_paper:
+            fused_results.append(by_paper[paper_id])
+        elif paper_id in chunk_by_paper:
+            score = 1.0 / (RRF_K + rank)
+            fused_results.append(SearchResult(chunk=chunk_by_paper[paper_id], score=score))
+    return fused_results
+
+
 class GraphTraversal(Protocol):
     def __call__(self, authors: list[str], titles: list[str]) -> list[str]:
         """Return a paper-id ranking for the linked authors/titles, best hits first."""
@@ -120,18 +147,4 @@ class GraphRetriever:
         linked_authors = link_authors(question, self.author_names)
         linked_titles = link_titles(question, self.titles)
         graph_ranking = self.traverse(linked_authors, linked_titles)
-        if not graph_ranking:
-            return base_results[:top_k]
-
-        dense_ranking = dedup_paper_ids(base_results)
-        fused_ranking = rrf_fuse([dense_ranking, graph_ranking])[:top_k]
-
-        by_paper = {result.chunk.paper_id: result for result in base_results}
-        fused_results: list[SearchResult] = []
-        for rank, paper_id in enumerate(fused_ranking, start=1):
-            if paper_id in by_paper:
-                fused_results.append(by_paper[paper_id])
-            elif paper_id in self.chunk_by_paper:
-                score = 1.0 / (RRF_K + rank)
-                fused_results.append(SearchResult(chunk=self.chunk_by_paper[paper_id], score=score))
-        return fused_results
+        return fuse_graph_ranking(base_results, graph_ranking, self.chunk_by_paper, top_k=top_k)
