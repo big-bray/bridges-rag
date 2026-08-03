@@ -10,6 +10,7 @@ dependencies = [
     "fastembed>=0.4",
     "httpx>=0.27",
     "neo4j>=6.2.0",
+    "ollama>=0.6.2",
     "pydantic>=2.7",
     "pymupdf4llm>=0.0.17",
     "qdrant-client>=1.9",
@@ -81,6 +82,10 @@ module = [
     "test_rerank",
     "test_graph_build",
     "test_graph_retriever",
+    "test_graph_concepts",
+    "test_graph_concepts_store",
+    "test_graph_concepts_pipeline",
+    "test_graph_build_concepts",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

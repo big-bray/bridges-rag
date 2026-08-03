@@ -1,4 +1,4 @@
-.PHONY: setup wait-for-qdrant ingest extract index graph eval sweep build all clean lint fmt test
+.PHONY: setup wait-for-qdrant ingest extract index graph concepts eval sweep build all clean lint fmt test
 
 YEAR ?= 2025
 DATA_DIR ?= data
@@ -29,6 +29,9 @@ index: wait-for-qdrant
 
 graph:
 	uv run python -m bridges_rag.graph.cli --year $(YEAR) --data-dir $(DATA_DIR)
+
+concepts:
+	uv run python -m bridges_rag.graph.concepts_cli --year $(YEAR) --data-dir $(DATA_DIR)
 
 eval:
 	uv run python -m bridges_rag.eval.cli --benchmark $(BENCHMARK) $(if $(HYBRID),--hybrid) $(if $(RERANK),--rerank) $(if $(GRAPH),--graph --year $(YEAR) --data-dir $(DATA_DIR))
